@@ -1,18 +1,232 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Elliott Dinley</title>
-  <link rel="stylesheet" href="styles.css" />
-</head>
-<body>
-  <div class="container">
-    <h1 class="typing-effect">Elliott Dinley</h1>
-    <p class="subtitle">Associate Java Developer | Minimalist Portfolio</p>
-  </div>
-  
-  <script src="script.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/typed.js@2.0.12"></script>
-</body>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Elliott Dinley – Portfolio</title>
+    <!-- Favicon (Optional) -->
+    <link rel="icon" href="favicon.ico" type="image/x-icon" />
+    <!-- CSS -->
+    <link rel="stylesheet" href="style.css" />
+    <!-- Web Fonts (Apple-like, plus something modern) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <!-- Example: Using system fonts + a fallback for headings -->
+    <link
+      href="https://fonts.googleapis.com/css2?family=Helvetica:wght@300;400;600;700&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+
+  <body>
+    <!-- ======================
+         NAVIGATION / HEADER
+         ====================== -->
+    <header class="nav-header">
+      <div class="nav-logo">Elliott Dinley</div>
+      <nav class="nav-menu">
+        <ul>
+          <li><a href="#home">Home</a></li>
+          <li><a href="#about">About</a></li>
+          <li><a href="#experience">Experience</a></li>
+          <li><a href="#skills">Skills</a></li>
+          <li><a href="#contact">Contact</a></li>
+        </ul>
+      </nav>
+      <!-- Optional Dark Mode Toggle -->
+      <div class="dark-mode-toggle" onclick="toggleDarkMode()">
+        <span class="toggle-icon">🌗</span>
+      </div>
+    </header>
+
+    <!-- ======================
+         HERO SECTION
+         ====================== -->
+    <section class="hero-section" id="home">
+      <div class="hero-bg" data-parallax-bg></div>
+      <div class="hero-content">
+        <h1 class="hero-title">
+          <span class="hero-title--small">Associate Java Developer,</span>
+          <span id="typewriter"></span>
+        </h1>
+        <p class="hero-subtitle">
+          Growing in Software Development
+        </p>
+        <a href="#about" class="btn-primary">Get to Know Me</a>
+      </div>
+      <div class="scroll-indicator">
+        <div class="mouse"></div>
+      </div>
+    </section>
+
+    <!-- ======================
+         ABOUT SECTION
+         ====================== -->
+    <section class="about-section" id="about">
+      <div class="container">
+        <h2 class="section-title" data-animate>About Me</h2>
+        <p class="section-description" data-animate>
+          I’m an Associate Java Developer at the start of my career, gaining
+          hands-on experience in Spring Boot microservices, Java development, and
+          agile working practices. Passionate about building reliable back-end
+          systems and contributing to front-end solutions, I strive to create
+          seamless user experiences that elevate products to the next level.
+        </p>
+      </div>
+    </section>
+
+    <!-- ======================
+         EXPERIENCE SECTION
+         ====================== -->
+    <section class="experience-section" id="experience">
+      <div class="container">
+        <h2 class="section-title" data-animate>Experience</h2>
+        <div class="timeline">
+          <!-- Current Role -->
+          <div class="timeline-block" data-animate>
+            <div class="marker"></div>
+            <div class="timeline-content">
+              <h3>Associate Java Developer <span>@ Send</span></h3>
+              <p class="date">Jan 2025 – Present</p>
+              <ul>
+                <li>
+                  Building scalable microservices with Spring Boot in an
+                  AWS-native architecture.
+                </li>
+                <li>
+                  Handling collaborative version control workflows (Git), ensuring
+                  smooth feature integration across front-end & back-end.
+                </li>
+                <li>
+                  Implementing CI/CD pipelines to expedite deployment processes.
+                </li>
+              </ul>
+            </div>
+          </div>
+
+          <!-- Apprentice Developer -->
+          <div class="timeline-block" data-animate>
+            <div class="marker"></div>
+            <div class="timeline-content">
+              <h3>Apprentice Developer <span>@ Send</span></h3>
+              <p class="date">Sep 2023 – Jan 2025</p>
+              <ul>
+                <li>
+                  Delivered on sprint commitments, contributed to microservices,
+                  front-end tasks, and database management.
+                </li>
+                <li>
+                  Designed and deployed microservices in AWS using Spring Boot.
+                </li>
+                <li>
+                  Gained valuable experience in agile methodologies and
+                  collaborative teamwork.
+                </li>
+              </ul>
+            </div>
+          </div>
+
+          <!-- Data Science Work Experience -->
+          <div class="timeline-block" data-animate>
+            <div class="marker"></div>
+            <div class="timeline-content">
+              <h3>Data Science Work Experience <span>@ Send</span></h3>
+              <p class="date">Sep 2023</p>
+              <ul>
+                <li>
+                  Redesigned an Excel-based actuarial pricing model into an
+                  interactive Python/Streamlit application.
+                </li>
+                <li>
+                  Employed modular programming & data pipeline optimization
+                  practices.
+                </li>
+                <li>
+                  Praised for strong problem-solving skills and adaptability.
+                </li>
+              </ul>
+            </div>
+          </div>
+
+          <!-- Aviva Experience -->
+          <div class="timeline-block" data-animate>
+            <div class="marker"></div>
+            <div class="timeline-content">
+              <h3>Data Science/Actuary Work Experience <span>@ Aviva</span></h3>
+              <p class="date">Jul 2022</p>
+              <ul>
+                <li>
+                  Hands-on with data science workflows and actuarial processes in
+                  Motor Underwriting and Aviva Zero.
+                </li>
+                <li>
+                  Conducted data analysis in Excel; examined model impacts on
+                  business decisions.
+                </li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ======================
+         SKILLS SECTION
+         ====================== -->
+    <section class="skills-section" id="skills">
+      <div class="container">
+        <h2 class="section-title" data-animate>Top Skills</h2>
+        <p class="section-description" data-animate>
+          A snapshot of my primary technical competencies:
+        </p>
+        <div class="skills-grid" data-animate>
+          <div class="skill-card">Java</div>
+          <div class="skill-card">Spring Framework</div>
+          <div class="skill-card">Git</div>
+          <div class="skill-card">Microservices</div>
+          <div class="skill-card">SDLC</div>
+          <div class="skill-card">Python</div>
+          <div class="skill-card">HTML / CSS</div>
+          <div class="skill-card">Cloud (AWS)</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ======================
+         CONTACT SECTION
+         ====================== -->
+    <section class="contact-section" id="contact">
+      <div class="container">
+        <h2 class="section-title" data-animate>Contact</h2>
+        <p class="section-description" data-animate>
+          I’m always happy to connect or talk tech! Feel free to reach out:
+        </p>
+        <div class="contact-details" data-animate>
+          <a href="mailto:elliott@example.com" target="_blank" rel="noopener"
+            >elliott@example.com</a
+          >
+          <a
+            href="https://www.linkedin.com/in/elliottdinley"
+            target="_blank"
+            rel="noopener"
+            >LinkedIn Profile</a
+          >
+        </div>
+      </div>
+    </section>
+
+    <!-- ======================
+         FOOTER
+         ====================== -->
+    <footer class="footer">
+      <div class="container">
+        <p>
+          &copy; <span id="year"></span> Elliott Dinley. All Rights Reserved.
+        </p>
+      </div>
+    </footer>
+
+    <!-- Scripts -->
+    <script src="script.js"></script>
+  </body>
 </html>
