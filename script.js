@@ -86,11 +86,23 @@ document.addEventListener("DOMContentLoaded", animateOnScroll);
 document.getElementById("year").textContent = new Date().getFullYear();
 
 /****************************************
- * 5. CHATBOT: SUBMIT FORM, CALL NETLIFY FUNC
+ * 5. CHATBOT
  ****************************************/
 const chatForm = document.getElementById("chat-form");
 const chatMessages = document.getElementById("chat-messages");
 const userInput = document.getElementById("user-input");
+
+let currentUserQuestion = ""; // store the last user question
+
+// Fade in the form on DOM load
+document.addEventListener("DOMContentLoaded", () => {
+  if (chatForm) {
+    // Add a small delay so the fade feels smoother
+    setTimeout(() => {
+      chatForm.classList.add("show");
+    }, 200);
+  }
+});
 
 if (chatForm && chatMessages && userInput) {
   chatForm.addEventListener("submit", async (e) => {
@@ -98,11 +110,13 @@ if (chatForm && chatMessages && userInput) {
     const message = userInput.value.trim();
     if (!message) return;
 
-    // Display user message in chat window
-    displayMessage(message, "user");
+    // Store the user's question so we can show it above bot's answer
+    currentUserQuestion = message;
+
+    // Clear out the input
     userInput.value = "";
 
-    // Send request to Netlify function
+    // Actually call your Netlify function with the user's question
     try {
       const response = await fetch("/.netlify/functions/chat", {
         method: "POST",
@@ -111,32 +125,54 @@ if (chatForm && chatMessages && userInput) {
       });
       const data = await response.json();
 
+      // If we got a valid response from the bot
       if (data && data.response) {
-        displayMessage(data.response, "bot");
+        // Show the bot's message
+        displayBotMessage(data.response);
       } else {
-        displayMessage(
-          "Oops, something went wrong with the chatbot. Please try again.",
-          "bot"
-        );
+        displayBotMessage("Oops, something went wrong. Please try again.");
       }
     } catch (error) {
       console.error("Error:", error);
-      displayMessage("Error connecting to chatbot. Please try again.", "bot");
+      displayBotMessage("Error connecting to chatbot. Please try again.");
     }
   });
 }
 
-function displayMessage(text, sender) {
-  const messageDiv = document.createElement("div");
-  messageDiv.classList.add("message");
-  if (sender === "user") {
-    messageDiv.classList.add("user-message");
-  } else {
-    messageDiv.classList.add("bot-message");
-  }
-  messageDiv.textContent = text;
-  chatMessages.appendChild(messageDiv);
+/**
+ * displayBotMessage: Clears old content, 
+ * shows the user's question in grey, 
+ * then fades in lines from the bot's response.
+ */
+function displayBotMessage(botText) {
+  // Clear previous Q&A
+  chatMessages.innerHTML = "";
 
-  // Scroll to bottom
-  chatMessages.scrollTop = chatMessages.scrollHeight;
+  // Insert user question in small grey italics
+  const questionEl = document.createElement("div");
+  questionEl.classList.add("user-question");
+  questionEl.textContent = currentUserQuestion;
+  chatMessages.appendChild(questionEl);
+
+  // Split bot text by lines
+  const lines = botText.split(/\r?\n/);
+
+  let delay = 0;
+  lines.forEach((line) => {
+    // Create a new div for each line
+    const lineEl = document.createElement("div");
+    lineEl.classList.add("bot-line");
+    lineEl.textContent = line;
+
+    // Append it to chatMessages but hidden
+    chatMessages.appendChild(lineEl);
+
+    // Fade in each line with a staggered delay
+    setTimeout(() => {
+      lineEl.classList.add("fade-in");
+    }, delay);
+
+    // Increase delay for next line
+    delay += 500;
+  });
 }
