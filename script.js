@@ -3,10 +3,27 @@
  ****************************************/
 const typedTextSpan = document.getElementById("typewriter");
 const textArray = [
-  "build scalable microservices",
-  "love solving problems",
-  "am an Associate Java Developer"
+  "build reliable Java microservices.",
+  "develop practical enterprise solutions.",
+  "craft scalable Java applications.",
+  "create efficient cloud-native systems.",
+  "work on distributed architectures.",
+  "optimise backend systems for performance.",
+  "design APIs for seamless integrations.",
+  "maintain robust microservice ecosystems.",
+  "solve complex problems with Java.",
+  "implement secure and scalable solutions.",
+  "integrate third-party services with precision.",
+  "write clean and maintainable Java code.",
+  "develop backend systems for modern applications.",
+  "contribute to cloud-based enterprise platforms.",
+  "collaborate on innovative software projects.",
+  "streamline workflows through automation.",
+  "ensure high availability in distributed systems.",
+  "enhance application reliability and performance.",
+  "implement cutting-edge Java technologies."
 ];
+  
 const typingDelay = 100;
 const erasingDelay = 50;
 const newTextDelay = 1500; // Pause between text
