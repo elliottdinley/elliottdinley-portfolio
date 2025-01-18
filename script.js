@@ -47,6 +47,12 @@ document.addEventListener("DOMContentLoaded", () => {
   if (typedTextSpan && textArray.length) {
     setTimeout(type, newTextDelay);
   }
+  
+  // Add dark mode toggle listener
+  const darkModeToggle = document.getElementById('darkModeToggle');
+  if (darkModeToggle) {
+    darkModeToggle.addEventListener('click', toggleDarkMode);
+  }
 });
 
 /****************************************
