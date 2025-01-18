@@ -53,8 +53,26 @@ document.addEventListener("DOMContentLoaded", () => {
  * 2. DARK MODE TOGGLE
  ****************************************/
 function toggleDarkMode() {
-  document.body.classList.toggle("dark-mode");
+  document.body.classList.toggle('dark-mode');
+  
+  // Save preference to localStorage
+  const isDarkMode = document.body.classList.contains('dark-mode');
+  localStorage.setItem('darkMode', isDarkMode);
+  
+  // Update toggle icon
+  const toggleIcon = document.querySelector('.toggle-icon');
+  toggleIcon.textContent = isDarkMode ? '☀️' : '🌗';
 }
+
+// Check for saved theme preference when page loads
+document.addEventListener('DOMContentLoaded', () => {
+  const savedDarkMode = localStorage.getItem('darkMode');
+  
+  if (savedDarkMode === 'true') {
+    document.body.classList.add('dark-mode');
+    document.querySelector('.toggle-icon').textContent = '☀️';
+  }
+});
 
 /****************************************
  * 3. SCROLL-BASED SECTION ANIMATIONS
