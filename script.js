@@ -62,6 +62,15 @@ function type() {
   }
 }
 
+function startNewPhrase() {
+  if (typewriterEl) {
+    typewriterEl.textContent = "";
+    currentText = getRandomPhrase();
+    i = 0;
+    type();
+  }
+}
+
 window.addEventListener("DOMContentLoaded", () => {
   type();
 });
