@@ -26,9 +26,10 @@ const textArray = [
   
 const typingDelay = 100;
 const erasingDelay = 50;
-const newTextDelay = 1500; // Pause between text
+const newTextDelay = 2000; // Pause between text
 let textArrayIndex = 0;
 let charIndex = 0;
+let currentFadeInterval = null;
 
 function type() {
   if (!typedTextSpan) return; // Safety check
@@ -72,19 +73,39 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 });
 
+document.addEventListener("DOMContentLoaded", () => {
+  if (typedTextSpan && textArray.length) {
+    setTimeout(type, newTextDelay);
+  }
+  
+  // Add dark mode toggle listener
+  const musicToggle = document.getElementById('musicToggle');
+  if (musicToggle) {
+    musicToggle.addEventListener('click', toggleMusic);
+  }
+});
+
 /****************************************
  * 2. DARK MODE TOGGLE
  ****************************************/
 function toggleDarkMode() {
+  const isDarkMode = document.body.classList.contains('dark-mode');
   document.body.classList.toggle('dark-mode');
   
+  // Play appropriate sound at lower volume
+  const toggleSound = document.getElementById(isDarkMode ? 'toggleOff' : 'toggleOn');
+  if (toggleSound) {
+    toggleSound.volume = 0.3; // Set volume to 30%
+    toggleSound.currentTime = 0;
+    toggleSound.play().catch(error => console.log("Sound play prevented:", error));
+  }
+  
   // Save preference to localStorage
-  const isDarkMode = document.body.classList.contains('dark-mode');
-  localStorage.setItem('darkMode', isDarkMode);
+  localStorage.setItem('darkMode', !isDarkMode);
   
   // Update toggle icon
   const toggleIcon = document.querySelector('.toggle-icon');
-  toggleIcon.textContent = isDarkMode ? '☀️' : '🌗';
+  toggleIcon.textContent = !isDarkMode ? '☀️' : '🌗';
 }
 
 // Check for saved theme preference when page loads
@@ -151,13 +172,15 @@ if (chatForm && chatMessages && userInput) {
     const message = userInput.value.trim();
     if (!message) return;
 
-    // Store the user's question so we can show it above bot's answer
+    // Store the user's question
     currentUserQuestion = message;
 
-    // Clear out the input
+    // Clear input and show loader
     userInput.value = "";
+    chatMessages.innerHTML = "";
+    const loader = document.querySelector('.loader');
+    loader.style.display = 'block';
 
-    // Actually call your Netlify function with the user's question
     try {
       const response = await fetch("/.netlify/functions/chat", {
         method: "POST",
@@ -166,14 +189,18 @@ if (chatForm && chatMessages && userInput) {
       });
       const data = await response.json();
 
+      // Hide loader
+      loader.style.display = 'none';
+
       // If we got a valid response from the bot
       if (data && data.response) {
-        // Show the bot's message
         displayBotMessage(data.response);
       } else {
         displayBotMessage("Oops, something went wrong. Please try again.");
       }
     } catch (error) {
+      // Hide loader
+      loader.style.display = 'none';
       console.error("Error:", error);
       displayBotMessage("Error connecting to chatbot. Please try again.");
     }
@@ -217,3 +244,131 @@ function displayBotMessage(botText) {
     delay += 500;
   });
 }
+
+/****************************************
+ * 6. MUSIC TOGGLE
+ ****************************************/
+function fadeOut(audio, duration) {
+    // Clear any existing fade interval
+    if (currentFadeInterval) {
+        clearInterval(currentFadeInterval);
+    }
+    
+    const initialVolume = audio.volume;
+    const step = initialVolume / (duration / 50);
+    
+    currentFadeInterval = setInterval(() => {
+        if (audio.volume - step > 0) {
+            audio.volume -= step;
+        } else {
+            audio.volume = 0;
+            audio.pause();
+            clearInterval(currentFadeInterval);
+            currentFadeInterval = null;
+        }
+    }, 50);
+}
+
+function fadeIn(audio, duration) {
+    // Clear any existing fade interval
+    if (currentFadeInterval) {
+        clearInterval(currentFadeInterval);
+    }
+    
+    const targetVolume = 0.2;
+    audio.volume = 0;
+    audio.play();
+    
+    const step = targetVolume / (duration / 50);
+    
+    currentFadeInterval = setInterval(() => {
+        if (audio.volume + step < targetVolume) {
+            audio.volume += step;
+        } else {
+            audio.volume = targetVolume;
+            clearInterval(currentFadeInterval);
+            currentFadeInterval = null;
+        }
+    }, 50);
+}
+
+function toggleMusic() {
+    const musicToggle = document.getElementById('musicToggle');
+    const bgMusic = document.getElementById('bgMusic');
+    
+    const isMuted = musicToggle.classList.contains('music-muted');
+    musicToggle.classList.toggle('music-muted');
+    
+    // Play toggle sound at lower volume
+    const toggleSound = document.getElementById(isMuted ? 'toggleOn' : 'toggleOff');
+    if (toggleSound) {
+        toggleSound.volume = 0.3; // Set volume to 30%
+        toggleSound.currentTime = 0;
+        toggleSound.play().catch(error => console.log("Sound play prevented:", error));
+    }
+    
+    // Update toggle icon
+    const toggleIcon = document.querySelector('.music-icon');
+    toggleIcon.textContent = !isMuted ? '🔇' : '🔊';
+    
+    // Fade out or fade in the music
+    if (!isMuted) {
+        fadeOut(bgMusic, 1000);
+    } else {
+        fadeIn(bgMusic, 1000);
+    }
+    
+    // Save preference to localStorage
+    localStorage.setItem('musicMuted', !isMuted);
+}
+
+// Check for saved music preference when page loads
+document.addEventListener('DOMContentLoaded', () => {
+  const savedMusicMuted = localStorage.getItem('musicMuted');
+  const musicToggle = document.getElementById('musicToggle');
+  const bgMusic = document.getElementById('bgMusic');
+  console.log(savedMusicMuted);
+  
+  // Set volume to 20% (0.2)
+  bgMusic.volume = 0.2;
+  
+  // For new users (savedMusicMuted is null) or when music was previously unmuted
+  if (savedMusicMuted === null || savedMusicMuted === 'false') {
+    bgMusic.play().catch(error => {
+      console.log("Autoplay prevented:", error);
+      musicToggle.classList.add('music-muted');
+      document.querySelector('.music-icon').textContent = '🔇';
+    });
+  } else {
+    // Music was previously muted
+    musicToggle.classList.add('music-muted');
+    document.querySelector('.music-icon').textContent = '🔇';
+  }
+});
+
+// Welcome Modal Handler
+document.addEventListener("DOMContentLoaded", () => {
+  const modal = document.getElementById("welcomeModal");
+  const modalButton = modal.querySelector(".modal-button");
+  
+  // Check if user has visited before
+  // if (!localStorage.getItem("hasVisited")) {
+  if (true) {
+    // Show modal with slight delay for smooth transition
+    setTimeout(() => {
+      modal.classList.add("show");
+    }, 500);
+    
+    // Store that user has visited
+    localStorage.setItem("hasVisited", "true");
+  }
+  
+  // Close modal when button is clicked
+  modalButton.addEventListener("click", () => {
+    modal.classList.remove("show");
+    // Remove modal from DOM after animation
+    setTimeout(() => {
+      modal.remove();
+    }, 300);
+  });
+});

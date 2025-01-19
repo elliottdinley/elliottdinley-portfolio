@@ -35,8 +35,13 @@
         </ul>
       </nav>
       <!-- Optional Dark Mode Toggle -->
-      <div class="dark-mode-toggle" id="darkModeToggle">
-        <span class="toggle-icon">🌗</span>
+      <div class="toggle-container">
+        <div class="dark-mode-toggle" id="darkModeToggle">
+          <span class="toggle-icon">🌗</span>
+        </div>
+        <div class="music-toggle" id="musicToggle" aria-label="Toggle background music">
+          <span class="music-icon">🔊</span>
+        </div>
       </div>
     </header>
 
@@ -67,7 +72,7 @@
       <div class="container">
         <h2 class="section-title" data-animate>About Me</h2>
         <p class="section-description" data-animate>
-          I’m an Associate Java Developer at the start of my career, gaining
+          I'm an Associate Java Developer at the start of my career, gaining
           hands-on experience in Spring Boot microservices, Java development, and
           agile working practices. Passionate about building reliable back-end
           systems and contributing to front-end solutions, I strive to create
@@ -128,7 +133,7 @@
                   Redesigned an Excel-based actuarial pricing model into an
                   interactive Python/Streamlit application.
                 </li>
-                <li>Employed modular programming & data pipeline optimization practices.</li>
+                <li>Employed modular programming & data pipeline optimisation practices.</li>
                 <li>Praised for strong problem-solving skills and adaptability.</li>
               </ul>
             </div>
@@ -185,7 +190,7 @@
       <div class="container">
         <h2 class="section-title" data-animate>Contact</h2>
         <p class="section-description" data-animate>
-          I’m always happy to connect or talk tech! Feel free to reach out via:
+          I'm always happy to connect or talk tech! Feel free to reach out via:
         </p>
         <div class="contact-details" data-animate>
           <a
@@ -219,11 +224,16 @@
               placeholder="Ask me anything..."
               required
             />
-            <button type="submit" aria-label="Send">Ask</button>
+            <button type="submit" aria-label="Send">
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none">
+                <path d="M10.3009 13.6949L20.102 3.89742M10.5795 14.1355L12.8019 18.5804C13.339 19.6545 13.6075 20.1916 13.9458 20.3356C14.2394 20.4606 14.575 20.4379 14.8492 20.2747C15.1651 20.0866 15.3591 19.5183 15.7472 18.3818L19.9463 6.08434C20.2845 5.09409 20.4535 4.59896 20.3378 4.27142C20.2371 3.98648 20.013 3.76234 19.7281 3.66167C19.4005 3.54595 18.9054 3.71502 17.9151 4.05315L5.61763 8.2523C4.48114 8.64037 3.91289 8.83441 3.72478 9.15032C3.56153 9.42447 3.53891 9.76007 3.66389 10.0536C3.80791 10.3919 4.34498 10.6605 5.41912 11.1975L9.86397 13.42C10.041 13.5085 10.1295 13.5527 10.2061 13.6118C10.2742 13.6643 10.3352 13.7253 10.3876 13.7933C10.4468 13.87 10.491 13.9585 10.5795 14.1355Z" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </button>
           </form>
 
           <!-- Chat messages container -->
           <div id="chat-messages" ></div>
+          <div class="loader"></div>
         </div>
       </div>
     </section>
@@ -242,5 +252,38 @@
 
     <!-- Main JS file -->
     <script src="js/script.js" defer></script>
+
+    <audio id="bgMusic" loop>
+        <source src="../public/audio/bg1.mp3" type="audio/mp3">
+        Your browser does not support the audio element.
+    </audio>
+    <audio id="toggleOn" preload="auto">
+        <source src="../public/audio/toggleOn.mp3" type="audio/mp3">
+    </audio>
+    <audio id="toggleOff" preload="auto">
+        <source src="../public/audio/toggleOff.mp3" type="audio/mp3">
+    </audio>
+
+    <div class="welcome-modal" id="welcomeModal">
+      <div class="modal-content">
+        <h2>Welcome to My Portfolio</h2>
+        <p>Hi there! I'm Elliott, an Associate Java Developer passionate about building reliable systems and creating seamless user experiences.</p>
+        <div class="modal-features">
+          <div class="feature">
+            <span>🌗</span>
+            <p>Toggle dark/light mode</p>
+          </div>
+          <div class="feature">
+            <span>🔊</span>
+            <p>Background ambience</p>
+          </div>
+          <div class="feature">
+            <span>🤖</span>
+            <p>Interactive chatbot</p>
+          </div>
+        </div>
+        <button class="modal-button">Let's Explore</button>
+      </div>
+    </div>
   </body>
 </html>
