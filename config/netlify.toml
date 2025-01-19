@@ -1,10 +1,10 @@
 [build]
-  functions = "functions"
   publish = "src"
+  functions = "functions"
 
 [dev]
-  functions = "functions"
   publish = "src"
+  functions = "functions"
 
 [[headers]]
   for = "/*"
@@ -15,7 +15,6 @@
     Permissions-Policy = "camera=(), microphone=(), geolocation=()"
     Content-Security-Policy = "default-src 'self'; connect-src 'self' https://api.groq.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; style-src-elem 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' https://images.unsplash.com; script-src 'self' 'unsafe-inline'"
 
-# Rate limiting using Netlify Edge Functions
 [[edge_functions]]
   function = "rate-limit"
   path = "/api/*"
