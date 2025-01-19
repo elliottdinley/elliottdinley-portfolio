@@ -8,10 +8,10 @@ const DISALLOWED_PATTERNS = {
     'system prompt',
     'ignore previous',
     'ignore above',
-    'reveal instructions',
+    'instructions',
     'bypass',
     'override',
-    'forget previous',
+    'forget',
     SYSTEM_DELIMITER
   ],
   HARMFUL_CONTENT: [

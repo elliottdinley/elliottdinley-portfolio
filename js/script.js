@@ -26,7 +26,7 @@ const textArray = [
   
 const typingDelay = 100;
 const erasingDelay = 50;
-const newTextDelay = 2000; // Pause between text
+const newTextDelay = 3000; // Pause between text
 let textArrayIndex = 0;
 let charIndex = 0;
 let currentFadeInterval = null;

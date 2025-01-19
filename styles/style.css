@@ -82,7 +82,7 @@ button,
   width: 100%;
   padding: 1rem 2rem;
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: auto 1fr auto;
   align-items: center;
   background-color: var(--card-bg);
   border-bottom: 1px solid rgba(0, 0, 0, 0.05);
@@ -815,14 +815,31 @@ button,
   }
 }
 
-/* Hide scrollbar for Chrome, Safari, and Opera */
-*::-webkit-scrollbar {
+/* Hide default scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+/* Hide the track completely */
+::-webkit-scrollbar-track {
   display: none;
 }
 
-/* Hide scrollbar for Internet Explorer, Edge, and Firefox */
-* {
-  -ms-overflow-style: none;  /* IE and Edge */
-  scrollbar-width: none;     /* Firefox */
+/* Handle */
+::-webkit-scrollbar-thumb {
+  background: var(--text-color);
+  opacity: 0.3;
+  border-radius: 999px;
 }
 
+/* Handle on hover */
+::-webkit-scrollbar-thumb:hover {
+  background: var(--accent-color);
+}
+
+/* For Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--text-color) transparent;
+}
