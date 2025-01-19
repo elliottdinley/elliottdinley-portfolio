@@ -1,8 +1,10 @@
 [build]
-  functions = "netlify/functions"
+  functions = "functions"
+  publish = "src"
 
 [dev]
-  functions = "netlify/functions"
+  functions = "functions"
+  publish = "src"
 
 [[headers]]
   for = "/*"
