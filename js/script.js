@@ -179,7 +179,7 @@ if (chatForm && chatMessages && userInput) {
     userInput.value = "";
     chatMessages.innerHTML = "";
     const loader = document.querySelector('.loader');
-    loader.style.display = 'block';
+    loader.style.display = 'grid';
 
     try {
       const response = await fetch("/.netlify/functions/chat", {
