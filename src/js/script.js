@@ -159,7 +159,7 @@ if (chatForm && chatMessages && userInput) {
 
     // Actually call your Netlify function with the user's question
     try {
-      const response = await fetch("/api/chat", {
+      const response = await fetch("/.netlify/functions/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ message })
