@@ -352,8 +352,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const modalButton = modal.querySelector(".modal-button");
   
   // Check if user has visited before
-  // if (!localStorage.getItem("hasVisited")) {
-  if (true) {
+  if (!localStorage.getItem("hasVisited")) {
     // Show modal with slight delay for smooth transition
     setTimeout(() => {
       modal.classList.add("show");

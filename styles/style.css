@@ -9,6 +9,7 @@
 
 html {
   scroll-behavior: smooth;
+  overflow-x: hidden;
 }
 
 body {
@@ -727,3 +728,101 @@ button,
   83.33% {background-position: calc(0*100%/3) 50% ,calc(1*100%/3) 50% ,calc(2*100%/3) 50% ,calc(3*100%/3) 100%}
   100%   {background-position: calc(0*100%/3) 50% ,calc(1*100%/3) 50% ,calc(2*100%/3) 50% ,calc(3*100%/3) 50% }
 }
+
+/* Skills Carousel */
+.skills-carousel-container {
+  position: relative;
+  width: 100%;
+  overflow: hidden;
+  margin: 2rem 0;
+}
+
+.skills-carousel {
+  overflow: hidden;
+  padding: 1rem 0;
+  margin: 0 2rem;
+}
+
+.skills-track {
+  display: flex;
+  gap: 1rem;
+  padding: 0 1rem;
+  animation: skills-scroll 20s cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite alternate;
+}
+
+.skills-gradient-left,
+.skills-gradient-right {
+  position: absolute;
+  top: 0;
+  width: 100px;
+  height: 100%;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.skills-gradient-left {
+  left: 0;
+  background: linear-gradient(90deg, var(--section-bg) 0%, transparent 100%);
+}
+
+.skills-gradient-right {
+  right: 0;
+  background: linear-gradient(270deg, var(--section-bg) 0%, transparent 100%);
+}
+
+.skill-card {
+  flex: 0 0 auto;
+  min-width: 160px;
+  background: var(--card-bg);
+  border-radius: 8px;
+  padding: 1rem 1.5rem;
+  text-align: center;
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
+  font-weight: 500;
+  color: var(--text-color);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.skill-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.07);
+}
+
+@keyframes skills-scroll {
+  0% {
+    transform: translateX(5rem);
+  }
+  100% {
+    transform: translateX(calc(-50% - 10rem));
+  }
+}
+
+/* Pause animation on hover */
+.skills-carousel:hover .skills-track {
+  animation-play-state: paused;
+}
+
+/* Add responsive adjustments */
+@media (max-width: 768px) {
+  .skills-gradient-left,
+  .skills-gradient-right {
+    width: 50px;
+  }
+  
+  .skills-carousel {
+    margin: 0 1rem;
+  }
+}
+
+/* Hide scrollbar for Chrome, Safari, and Opera */
+*::-webkit-scrollbar {
+  display: none;
+}
+
+/* Hide scrollbar for Internet Explorer, Edge, and Firefox */
+* {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;     /* Firefox */
+}
+
