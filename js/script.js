@@ -1,4 +1,15 @@
 /****************************************
+ * Console Message for Curious Developers
+ ****************************************/
+document.addEventListener("DOMContentLoaded", () => {
+  console.log("%c👋 Hello there, curious developer!", "color: #3498db; font-size: 18px; font-weight: bold;");
+  console.log("%cThanks for exploring my portfolio! Let's connect:", "color: #2ecc71; font-size: 14px;");
+  console.log("%c📧 Email: elliott.dinley1@gmail.com", "color: #e74c3c; font-size: 14px;");
+  console.log("%c💼 LinkedIn: https://www.linkedin.com/in/elliottdinley", "color: #9b59b6; font-size: 14px;");
+  console.log("%c🔗 GitHub: https://github.com/elliottdinley", "color: #f1c40f; font-size: 14px;");
+});
+
+/****************************************
  * 1. TYPEWRITER EFFECT
  ****************************************/
 const typedTextSpan = document.getElementById("typewriter");
