@@ -193,6 +193,14 @@ if (chatForm && chatMessages && userInput) {
     loader.style.display = 'grid';
 
     try {
+      const recaptchaToken = grecaptcha.getResponse();
+      if (!recaptchaToken) {
+        // If token is empty, user hasn't solved the captcha
+        loader.style.display = 'none';
+        displayBotMessage("Please complete the reCAPTCHA first.");
+        return;
+      }
+      
       const response = await fetch("/.netlify/functions/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
