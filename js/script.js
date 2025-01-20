@@ -192,38 +192,39 @@ if (chatForm && chatMessages && userInput) {
     const loader = document.querySelector('.loader');
     loader.style.display = 'grid';
 
-    await grecaptcha.enterprise.ready();
-    const recaptchaToken = await grecaptcha.enterprise.execute("6Lcg0bwqAAAAAI8qkk0r9A9A2KnoK6n9v9n8WI7v", {
-      action: "chatbot"
-    });
+    grecaptcha.enterprise.ready(async () => {
+      try {
+        const recaptchaToken = await grecaptcha.enterprise.execute("6Lcg0bwqAAAAAI8qkk0r9A9A2KnoK6n9v9n8WI7v", {
+          action: "chatbot"
+        });
+        
+        const response = await fetch("/.netlify/functions/chat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            message,
+            recaptchaToken
+          })
+        });
+        const data = await response.json();
 
-    try {
-      const response = await fetch("/.netlify/functions/chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          message,
-          recaptchaToken
-        })
-      });
-      const data = await response.json();
-
-      // Hide loader
-      loader.style.display = 'none';
-
-      // If we got a valid response from the bot
-      if (data && data.response) {
-        displayBotMessage(data.response);
-      } else {
-        displayBotMessage("Oops, something went wrong. Please try again.");
+        // Hide loader
+        loader.style.display = 'none';
+  
+        // If we got a valid response from the bot
+        if (data && data.response) {
+          displayBotMessage(data.response);
+        } else {
+          displayBotMessage("Oops, something went wrong. Please try again.");
+        }
+      } catch (error) {
+        // Hide loader
+        loader.style.display = 'none';
+        console.error("Error:", error);
+        displayBotMessage("Error connecting to chatbot. Please try again.");
       }
-    } catch (error) {
-      // Hide loader
-      loader.style.display = 'none';
-      console.error("Error:", error);
-      displayBotMessage("Error connecting to chatbot. Please try again.");
-    }
-  });
+    });
+  }
 }
 
 /**
