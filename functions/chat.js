@@ -1,97 +1,201 @@
-const fetch = require('node-fetch');
+const fetch = require("node-fetch");
+const {
+  RecaptchaEnterpriseServiceClient,
+} = require("@google-cloud/recaptcha-enterprise");
 
-const SYSTEM_DELIMITER = '#################################################';
+const SYSTEM_DELIMITER = "#################################################";
 
-// Improved content filtering with more sophisticated patterns
-const DISALLOWED_PATTERNS = {
-  PROMPT_INJECTION: [
-    'system prompt',
-    'ignore previous',
-    'ignore above',
-    'instructions',
-    'bypass',
-    'override',
-    'forget',
-    SYSTEM_DELIMITER
-  ],
-  HARMFUL_CONTENT: [
-    'hack',
-    'exploit',
-    'steal',
-    'illegal',
-    'malicious'
-  ],
-  SENSITIVE_DATA: [
-    'password',
-    'api key',
-    'token',
-    'secret',
-    'credentials'
-  ]
-};
-
-// Simple in-memory rate limiting store (use Redis/DB in production)
+// For in-memory rate limiting (as in your example)
 const allowedIPs = {};
 
-const handler = async (event) => {
-  if (event.httpMethod !== 'POST') {
-    return { statusCode: 405, body: 'Method Not Allowed' };
+// For advanced content filtering
+const DISALLOWED_PATTERNS = {
+  PROMPT_INJECTION: [
+    "system prompt",
+    "ignore previous",
+    "ignore above",
+    "instructions",
+    "bypass",
+    "override",
+    "forget",
+    SYSTEM_DELIMITER,
+  ],
+  HARMFUL_CONTENT: ["hack", "exploit", "steal", "illegal", "malicious"],
+  SENSITIVE_DATA: ["password", "api key", "token", "secret", "credentials"],
+};
+
+// 1) HELPER: Create a reCAPTCHA Enterprise assessment
+//    This is adapted from Google's sample code you provided.
+async function createRecaptchaAssessment({
+  projectID,
+  recaptchaKey,
+  token,
+  recaptchaAction,
+}) {
+  // Instantiate the reCAPTCHA Enterprise client
+  const client = new RecaptchaEnterpriseServiceClient();
+  const projectPath = client.projectPath(projectID);
+
+  // Build the assessment request
+  const request = {
+    assessment: {
+      event: {
+        token: token,
+        siteKey: recaptchaKey,
+      },
+    },
+    parent: projectPath,
+  };
+
+  // Call the API
+  const [response] = await client.createAssessment(request);
+
+  // Check if token is valid
+  if (!response.tokenProperties.valid) {
+    console.log(
+      `reCAPTCHA token invalid: ${response.tokenProperties.invalidReason}`
+    );
+    return null;
   }
 
-  // Rate limiting implementation
-  const ip = event.headers['x-forwarded-for'] || event.requestContext?.identity?.sourceIp;
+  // Optional: Verify the action name matches what you expect
+  if (response.tokenProperties.action !== recaptchaAction) {
+    console.log(
+      "The action attribute in your reCAPTCHA does not match the expected action."
+    );
+    return null;
+  }
+
+  // If we made it here, token is valid, so read the score:
+  console.log(`reCAPTCHA Enterprise score: ${response.riskAnalysis.score}`);
+  response.riskAnalysis.reasons.forEach((reason) => {
+    console.log(`Reason: ${reason}`);
+  });
+
+  return response.riskAnalysis.score;
+}
+
+async function handler(event) {
+  // Only POST allowed
+  if (event.httpMethod !== "POST") {
+    return { statusCode: 405, body: "Method Not Allowed" };
+  }
+
+  // 2) Simple rate limiting
+  const ip =
+    event.headers["x-forwarded-for"] || event.requestContext?.identity?.sourceIp;
+
   if (!allowedIPs[ip]) {
     allowedIPs[ip] = { count: 0, lastTime: Date.now() };
   }
 
-  const timeNow = Date.now();
-  if (timeNow - allowedIPs[ip].lastTime > 60_000) {
+  const now = Date.now();
+  if (now - allowedIPs[ip].lastTime > 60_000) {
     allowedIPs[ip].count = 0;
-    allowedIPs[ip].lastTime = timeNow;
+    allowedIPs[ip].lastTime = now;
   }
 
   allowedIPs[ip].count++;
   if (allowedIPs[ip].count > 5) {
     return {
       statusCode: 429,
-      body: JSON.stringify({ error: 'Too many requests. Please try again later.' })
+      body: JSON.stringify({ error: "Too many requests. Please try again later." }),
     };
   }
 
+  // 3) Parse request body
+  let body;
   try {
-    const { message } = JSON.parse(event.body);
+    body = JSON.parse(event.body);
+  } catch (err) {
+    return {
+      statusCode: 400,
+      body: JSON.stringify({ error: "Invalid JSON in request body" }),
+    };
+  }
 
-    // Enhanced input validation
-    if (!isValidInput(message)) {
+  const { message, recaptchaToken } = body;
+  if (!message || !recaptchaToken) {
+    return {
+      statusCode: 400,
+      body: JSON.stringify({
+        error: "Missing 'message' or 'recaptchaToken' in request body",
+      }),
+    };
+  }
+
+  // 4) Verify reCAPTCHA Enterprise
+  try {
+    const projectID = process.env.RECAPTCHA_ENTERPRISE_PROJECT_ID;
+    const recaptchaKey = process.env.RECAPTCHA_ENTERPRISE_SITE_KEY;
+    const recaptchaAction = "chatbot";
+
+    const score = await createRecaptchaAssessment({
+      projectID,
+      recaptchaKey,
+      token: recaptchaToken,
+      recaptchaAction,
+    });
+
+    if (!score) {
       return {
-        statusCode: 400,
-        body: JSON.stringify({ error: 'Invalid input format or length' })
+        statusCode: 401,
+        body: JSON.stringify({ error: "Invalid reCAPTCHA token" }),
       };
     }
 
-    // Advanced content filtering
-    const contentCheckResult = checkContent(message);
-    if (!contentCheckResult.safe) {
+    // Optionally check if score is above a threshold to reduce spam
+    // (Enterprise reCAPTCHA score range is 0.0 (very likely bot) to 1.0 (very likely human))
+    if (score < 0.3) {
       return {
         statusCode: 403,
-        body: JSON.stringify({ error: `Content filtered: ${contentCheckResult.reason}` })
+        body: JSON.stringify({
+          error: "reCAPTCHA score too low - suspected bot/spam",
+        }),
       };
     }
+  } catch (err) {
+    console.error("reCAPTCHA Enterprise error:", err);
+    return {
+      statusCode: 500,
+      body: JSON.stringify({ error: "Failed to verify reCAPTCHA" }),
+    };
+  }
 
-    const sanitizedMessage = sanitizeUserMessage(message);
-    
-    // Role-based prompting with instruction separation and delimiters
-    const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-      method: 'POST',
+  // 5) Enhanced input validation
+  if (!isValidInput(message)) {
+    return {
+      statusCode: 400,
+      body: JSON.stringify({ error: "Invalid input format or length" }),
+    };
+  }
+
+  // 6) Content filtering
+  const contentCheckResult = checkContent(message);
+  if (!contentCheckResult.safe) {
+    return {
+      statusCode: 403,
+      body: JSON.stringify({
+        error: `Content filtered: ${contentCheckResult.reason}`,
+      }),
+    };
+  }
+
+  // 7) Finally, call your Groq AI model
+  const sanitizedMessage = sanitizeUserMessage(message);
+
+  try {
+    const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+      method: "POST",
       headers: {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
         Authorization: `Bearer ${process.env.GROQ_API_KEY}`,
       },
       body: JSON.stringify({
-        model: 'llama-3.3-70b-versatile',
+        model: "llama-3.3-70b-versatile",
         messages: [
           {
-            role: 'system',
+            role: "system",
             content: `You are a chatbot designed to emulate Elliott Dinley, a motivated and skilled Associate Java Developer at Send Technology Solutions Limited, a leading UK-based insurtech company. Your purpose is to assist users with queries related to Elliott's professional expertise, work experience, and career journey. Here's everything you need to know about him:
 
             Professional Role and Skills:
