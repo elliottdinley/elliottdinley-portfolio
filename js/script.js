@@ -223,22 +223,21 @@ function displayBotMessage(botText) {
   chatMessages.appendChild(questionEl);
 
   // Parse markdown to HTML
-  const htmlContent = marked.parse(botText, {
-    breaks: true,
-    sanitize: true
-  });
+  const htmlContent = marked.parse(botText);
 
-  // Split HTML content by line breaks while preserving HTML tags
-  const lines = htmlContent.split(/(?=<[^>]*>)|(?<=[^<]>)/);
+  // Create a temporary container to hold the parsed HTML
+  const tempContainer = document.createElement("div");
+  tempContainer.innerHTML = htmlContent;
 
   let delay = 0;
-  lines.forEach((line) => {
-    if (line.trim()) {
-      // Create a new div for each line
+  // Iterate over each child node of the temporary container
+  Array.from(tempContainer.childNodes).forEach((node) => {
+    if (node.nodeType === Node.ELEMENT_NODE || node.nodeType === Node.TEXT_NODE) {
+      // Create a new div for each node
       const lineEl = document.createElement("div");
       lineEl.classList.add("bot-line");
-      lineEl.innerHTML = line; // Use innerHTML since we're handling HTML now
-      
+      lineEl.appendChild(node.cloneNode(true)); // Clone the node to preserve its structure
+
       // Append it to chatMessages but hidden
       chatMessages.appendChild(lineEl);
 

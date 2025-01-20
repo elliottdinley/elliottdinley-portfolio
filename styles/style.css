@@ -616,14 +616,12 @@ button,
 .bot-line {
   opacity: 0;
   transform: translateY(10px);
-  margin-bottom: 0.5rem;
-  color: var(--text-color);
+  transition: opacity 0.3s ease, transform 0.3s ease;
 }
 
 .bot-line.fade-in {
   opacity: 1;
   transform: translateY(0);
-  transition: all 0.5s ease;
 }
 
 /* Welcome Modal */
