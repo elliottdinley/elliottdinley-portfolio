@@ -222,26 +222,34 @@ function displayBotMessage(botText) {
   questionEl.textContent = currentUserQuestion;
   chatMessages.appendChild(questionEl);
 
-  // Split bot text by lines
-  const lines = botText.split(/\r?\n/);
+  // Parse markdown to HTML
+  const htmlContent = marked.parse(botText, {
+    breaks: true,
+    sanitize: true
+  });
+
+  // Split HTML content by line breaks while preserving HTML tags
+  const lines = htmlContent.split(/(?=<[^>]*>)|(?<=[^<]>)/);
 
   let delay = 0;
   lines.forEach((line) => {
-    // Create a new div for each line
-    const lineEl = document.createElement("div");
-    lineEl.classList.add("bot-line");
-    lineEl.textContent = line;
+    if (line.trim()) {
+      // Create a new div for each line
+      const lineEl = document.createElement("div");
+      lineEl.classList.add("bot-line");
+      lineEl.innerHTML = line; // Use innerHTML since we're handling HTML now
+      
+      // Append it to chatMessages but hidden
+      chatMessages.appendChild(lineEl);
 
-    // Append it to chatMessages but hidden
-    chatMessages.appendChild(lineEl);
+      // Fade in each line with a staggered delay
+      setTimeout(() => {
+        lineEl.classList.add("fade-in");
+      }, delay);
 
-    // Fade in each line with a staggered delay
-    setTimeout(() => {
-      lineEl.classList.add("fade-in");
-    }, delay);
-
-    // Increase delay for next line
-    delay += 500;
+      // Increase delay for next line
+      delay += 500;
+    }
   });
 }
 

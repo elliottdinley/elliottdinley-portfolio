@@ -3,6 +3,7 @@
     "version": "1.0.0",
     "description": "Personal portfolio website",
     "dependencies": {
-        "node-fetch": "^2.6.9"
+        "node-fetch": "^2.6.9",
+        "marked": "^15.0.6"
     }
 }
