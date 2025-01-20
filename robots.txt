@@ -1,33 +1,34 @@
 # robots.txt for elliottdinley.dev
-# Welcome, curious crawlers and humans alike! Enjoy these Easter eggs :)
+# Hello, crawlers (and any humans curious enough to read this)!
 
-# Standard directives
+# Standard procedure, wouldn't be a proper robots.txt without it, eh?
 User-agent: *
 Allow: /
 
 Sitemap: https://elliottdinley.dev/sitemap.xml
 
-# Easter eggs section
-# Hey Googlebot, be nice and bring cookies next time 🍪
+# A little something extra...
+# To all bots: Don't work too hard. Take a break, maybe visit the homepage? :)
+
+# Specific bot directives
 User-agent: Googlebot
-Allow: /
-Disallow: /secret-lair/
+Disallow: /work-in-progress/
+# Thanks for stopping by, Google. You're doing great!
 
-# Bored crawler? Check out these random jokes:
-# Why don’t programmers like nature? It has too many bugs.
-# There are only 10 types of people in the world: 
-# Those who understand binary and those who don’t.
+User-agent: Bingbot
+Disallow: /hidden-treasure/
+# If you find it, let us know, okay?
 
-# A special note for Bingbot: Keep up the good work, we believe in you! 💪
+User-agent: *
+Disallow: /404/
 
-# To the human reading this: Remember to drink water and take breaks! 😊
+# Fun disallowed paths (not real, but fun to think about)
+Disallow: /secret-library/
+Disallow: /time-machine/
+Disallow: /debugging-station/
 
-# For any rogue crawlers: You shall not pass! (But you probably will anyway… 😅)
-Disallow: /gandalf/
+# To any curious human:
+# This file helps search engines navigate the site.
+# Feel free to browse, but sorry, the time machine is out of order.
 
-# Easter egg links (not real, just for fun)
-Disallow: /404-room-of-requirement/
-Disallow: /time-travel-machine/
-Disallow: /secret-coffee-recipes/
-
-# That's all, folks!
+# End of file. Safe travels through the web!
