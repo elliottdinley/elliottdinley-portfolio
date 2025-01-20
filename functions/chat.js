@@ -126,15 +126,11 @@ async function handler(event) {
 
   // 4) Verify reCAPTCHA Enterprise
   try {
-    const projectID = process.env.RECAPTCHA_ENTERPRISE_PROJECT_ID;
-    const recaptchaKey = "6Lcg0bwqAAAAAI8qkk0r9A9A2KnoK6n9v9n8WI7v";
-    const recaptchaAction = "chatbot";
-
     const score = await createRecaptchaAssessment({
-      projectID,
-      recaptchaKey,
+      projectID: process.env.RECAPTCHA_ENTERPRISE_PROJECT_ID,
+      recaptchaKey: "6Lcg0bwqAAAAAI8qkk0r9A9A2KnoK6n9v9n8WI7v",
       token: recaptchaToken,
-      recaptchaAction,
+      recaptchaAction: "chatbot",
     });
 
     if (!score) {
