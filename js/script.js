@@ -192,19 +192,19 @@ if (chatForm && chatMessages && userInput) {
     const loader = document.querySelector('.loader');
     loader.style.display = 'grid';
 
+    await grecaptcha.enterprise.ready();
+    const recaptchaToken = await grecaptcha.enterprise.execute("6Lcg0bwqAAAAAI8qkk0r9A9A2KnoK6n9v9n8WI7v", {
+      action: "chatbot"
+    });
+
     try {
-      const recaptchaToken = grecaptcha.getResponse();
-      if (!recaptchaToken) {
-        // If token is empty, user hasn't solved the captcha
-        loader.style.display = 'none';
-        displayBotMessage("Please complete the reCAPTCHA first.");
-        return;
-      }
-      
       const response = await fetch("/.netlify/functions/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message })
+        body: JSON.stringify({
+          message,
+          recaptchaToken
+        })
       });
       const data = await response.json();
 
