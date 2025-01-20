@@ -1,5 +1,4 @@
-const fetch = require("node-fetch");
-const crypto = require("crypto");
+const fetch = require('node-fetch');
 
 const SYSTEM_DELIMITER = '#################################################';
 
@@ -37,61 +36,6 @@ const allowedIPs = {};
 const handler = async (event) => {
   if (event.httpMethod !== 'POST') {
     return { statusCode: 405, body: 'Method Not Allowed' };
-  }
-
-  // HMAC
-  const requestSignature = event.headers["x-signature"];
-  const requestTimestamp = event.headers["x-timestamp"];
-
-  if (!requestSignature || !requestTimestamp) {
-    return {
-      statusCode: 401,
-      body: JSON.stringify({
-        error: "Missing HMAC signature or timestamp",
-      }),
-    };
-  }
-
-  const FIVE_MINUTES = 5 * 60 * 1000;
-  const timeNow = Date.now();
-  if (timeNow - parseInt(requestTimestamp, 10) > FIVE_MINUTES) {
-    return {
-      statusCode: 401,
-      body: JSON.stringify({
-        error: "Request is too old",
-      }),
-    };
-  }
-
-  // The raw request body is needed for signature calculation
-  const rawBody = event.body; // or event.rawBody if you're using a special config
-
-  // Build the same data string the frontend used
-  const dataString = `${requestTimestamp}:${rawBody}`;
-
-  // Recompute HMAC
-  const secret = process.env.HMAC_SECRET;
-  if (!secret) {
-    return {
-      statusCode: 500,
-      body: JSON.stringify({
-        error: "Missing HMAC_SECRET in environment variables",
-      }),
-    };
-  }
-
-  const computedSignature = crypto
-    .createHmac("sha256", secret)
-    .update(dataString)
-    .digest("hex");
-
-  if (computedSignature !== requestSignature) {
-    return {
-      statusCode: 401,
-      body: JSON.stringify({
-        error: "Invalid HMAC signature",
-      }),
-    };
   }
 
   // Rate limiting implementation
