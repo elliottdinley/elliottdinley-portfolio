@@ -1,0 +1,33 @@
+# robots.txt for elliottdinley.dev
+# Welcome, curious crawlers and humans alike! Enjoy these Easter eggs :)
+
+# Standard directives
+User-agent: *
+Allow: /
+
+Sitemap: https://elliottdinley.dev/sitemap.xml
+
+# Easter eggs section
+# Hey Googlebot, be nice and bring cookies next time 🍪
+User-agent: Googlebot
+Allow: /
+Disallow: /secret-lair/
+
+# Bored crawler? Check out these random jokes:
+# Why don’t programmers like nature? It has too many bugs.
+# There are only 10 types of people in the world: 
+# Those who understand binary and those who don’t.
+
+# A special note for Bingbot: Keep up the good work, we believe in you! 💪
+
+# To the human reading this: Remember to drink water and take breaks! 😊
+
+# For any rogue crawlers: You shall not pass! (But you probably will anyway… 😅)
+Disallow: /gandalf/
+
+# Easter egg links (not real, just for fun)
+Disallow: /404-room-of-requirement/
+Disallow: /time-travel-machine/
+Disallow: /secret-coffee-recipes/
+
+# That's all, folks!
