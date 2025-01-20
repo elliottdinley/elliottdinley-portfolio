@@ -224,7 +224,7 @@ if (chatForm && chatMessages && userInput) {
         displayBotMessage("Error connecting to chatbot. Please try again.");
       }
     });
-  }
+  });
 }
 
 /**
