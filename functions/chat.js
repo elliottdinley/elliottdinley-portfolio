@@ -1,14 +1,12 @@
 const fetch = require("node-fetch");
-const {
-  RecaptchaEnterpriseServiceClient,
-} = require("@google-cloud/recaptcha-enterprise");
+const { RecaptchaEnterpriseServiceClient } = require("@google-cloud/recaptcha-enterprise");
 
 const SYSTEM_DELIMITER = "#################################################";
 
-// For in-memory rate limiting (as in your example)
+// For in-memory rate limiting
 const allowedIPs = {};
 
-// For advanced content filtering
+// For content filtering
 const DISALLOWED_PATTERNS = {
   PROMPT_INJECTION: [
     "system prompt",
@@ -24,70 +22,62 @@ const DISALLOWED_PATTERNS = {
   SENSITIVE_DATA: ["password", "api key", "token", "secret", "credentials"],
 };
 
-// 1) HELPER: Create a reCAPTCHA Enterprise assessment
-//    This is adapted from Google's sample code you provided.
-async function createRecaptchaAssessment({
-  projectID,
-  recaptchaKey,
-  token,
-  recaptchaAction,
-}) {
-  // Instantiate the reCAPTCHA Enterprise client
-  const client = new RecaptchaEnterpriseServiceClient();
-  const projectPath = client.projectPath(projectID);
+// Parse Google Cloud credentials from environment
+const googleCredentials = JSON.parse(process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON);
 
-  // Build the assessment request
+// Instantiate the reCAPTCHA Enterprise client
+const client = new RecaptchaEnterpriseServiceClient({
+  credentials: {
+    client_email: googleCredentials.client_email,
+    private_key: googleCredentials.private_key,
+  },
+  projectId: googleCredentials.project_id,
+});
+
+// Create a reCAPTCHA Enterprise assessment
+async function createRecaptchaAssessment({ recaptchaKey, token, recaptchaAction }) {
+  const projectPath = client.projectPath(googleCredentials.project_id);
+
   const request = {
     assessment: {
       event: {
-        token: token,
+        token,
         siteKey: recaptchaKey,
       },
     },
     parent: projectPath,
   };
 
-  // Call the API
-  const [response] = await client.createAssessment(request);
+  try {
+    const [response] = await client.createAssessment(request);
 
-  // Check if token is valid
-  if (!response.tokenProperties.valid) {
-    console.log(
-      `reCAPTCHA token invalid: ${response.tokenProperties.invalidReason}`
-    );
-    return null;
+    if (!response.tokenProperties.valid) {
+      console.error(`Invalid reCAPTCHA token: ${response.tokenProperties.invalidReason}`);
+      return null;
+    }
+
+    if (response.tokenProperties.action !== recaptchaAction) {
+      console.error("Mismatch in reCAPTCHA action.");
+      return null;
+    }
+
+    console.log(`reCAPTCHA score: ${response.riskAnalysis.score}`);
+    response.riskAnalysis.reasons.forEach((reason) => console.log(`Reason: ${reason}`));
+
+    return response.riskAnalysis.score;
+  } catch (error) {
+    console.error("Error creating reCAPTCHA assessment:", error);
+    throw error;
   }
-
-  // Optional: Verify the action name matches what you expect
-  if (response.tokenProperties.action !== recaptchaAction) {
-    console.log(
-      "The action attribute in your reCAPTCHA does not match the expected action."
-    );
-    return null;
-  }
-
-  // If we made it here, token is valid, so read the score:
-  console.log(`reCAPTCHA Enterprise score: ${response.riskAnalysis.score}`);
-  response.riskAnalysis.reasons.forEach((reason) => {
-    console.log(`Reason: ${reason}`);
-  });
-
-  return response.riskAnalysis.score;
 }
 
 async function handler(event) {
-  // Only POST allowed
   if (event.httpMethod !== "POST") {
     return { statusCode: 405, body: "Method Not Allowed" };
   }
 
-  // 2) Simple rate limiting
-  const ip =
-    event.headers["x-forwarded-for"] || event.requestContext?.identity?.sourceIp;
-
-  if (!allowedIPs[ip]) {
-    allowedIPs[ip] = { count: 0, lastTime: Date.now() };
-  }
+  const ip = event.headers["x-forwarded-for"] || event.requestContext?.identity?.sourceIp;
+  if (!allowedIPs[ip]) allowedIPs[ip] = { count: 0, lastTime: Date.now() };
 
   const now = Date.now();
   if (now - allowedIPs[ip].lastTime > 60_000) {
@@ -97,96 +87,55 @@ async function handler(event) {
 
   allowedIPs[ip].count++;
   if (allowedIPs[ip].count > 5) {
-    return {
-      statusCode: 429,
-      body: JSON.stringify({ error: "Too many requests. Please try again later." }),
-    };
+    return { statusCode: 429, body: JSON.stringify({ error: "Too many requests. Please try again later." }) };
   }
 
-  // 3) Parse request body
   let body;
   try {
     body = JSON.parse(event.body);
-  } catch (err) {
-    return {
-      statusCode: 400,
-      body: JSON.stringify({ error: "Invalid JSON in request body" }),
-    };
+  } catch {
+    return { statusCode: 400, body: JSON.stringify({ error: "Invalid JSON in request body" }) };
   }
 
   const { message, recaptchaToken } = body;
   if (!message || !recaptchaToken) {
-    return {
-      statusCode: 400,
-      body: JSON.stringify({
-        error: "Missing 'message' or 'recaptchaToken' in request body",
-      }),
-    };
+    return { statusCode: 400, body: JSON.stringify({ error: "Missing 'message' or 'recaptchaToken'" }) };
   }
 
-  // 4) Verify reCAPTCHA Enterprise
   try {
     const score = await createRecaptchaAssessment({
-      projectID: process.env.RECAPTCHA_ENTERPRISE_PROJECT_ID,
       recaptchaKey: "6Lcg0bwqAAAAAI8qkk0r9A9A2KnoK6n9v9n8WI7v",
       token: recaptchaToken,
       recaptchaAction: "chatbot",
     });
 
     if (!score) {
-      return {
-        statusCode: 401,
-        body: JSON.stringify({ error: "Invalid reCAPTCHA token" }),
-      };
+      return { statusCode: 401, body: JSON.stringify({ error: "Invalid reCAPTCHA token" }) };
     }
 
-    // Optionally check if score is above a threshold to reduce spam
-    // (Enterprise reCAPTCHA score range is 0.0 (very likely bot) to 1.0 (very likely human))
     if (score < 0.3) {
-      return {
-        statusCode: 403,
-        body: JSON.stringify({
-          error: "reCAPTCHA score too low - suspected bot/spam",
-        }),
-      };
+      return { statusCode: 403, body: JSON.stringify({ error: "reCAPTCHA score too low - suspected bot/spam" }) };
     }
   } catch (err) {
-    console.error("reCAPTCHA Enterprise error:", err);
-    return {
-      statusCode: 500,
-      body: JSON.stringify({ error: "Failed to verify reCAPTCHA" }),
-    };
+    console.error("reCAPTCHA verification failed:", err);
+    return { statusCode: 500, body: JSON.stringify({ error: "Failed to verify reCAPTCHA" }) };
   }
 
-  // 5) Enhanced input validation
   if (!isValidInput(message)) {
-    return {
-      statusCode: 400,
-      body: JSON.stringify({ error: "Invalid input format or length" }),
-    };
+    return { statusCode: 400, body: JSON.stringify({ error: "Invalid input format or length" }) };
   }
 
-  // 6) Content filtering
   const contentCheckResult = checkContent(message);
   if (!contentCheckResult.safe) {
-    return {
-      statusCode: 403,
-      body: JSON.stringify({
-        error: `Content filtered: ${contentCheckResult.reason}`,
-      }),
-    };
+    return { statusCode: 403, body: JSON.stringify({ error: `Content filtered: ${contentCheckResult.reason}` }) };
   }
 
-  // 7) Finally, call your Groq AI model
   const sanitizedMessage = sanitizeUserMessage(message);
 
   try {
     const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${process.env.GROQ_API_KEY}`,
-      },
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${process.env.GROQ_API_KEY}` },
       body: JSON.stringify({
         model: "llama-3.3-70b-versatile",
         messages: [
@@ -276,76 +225,36 @@ async function handler(event) {
     });
 
     const data = await response.json();
-    
-    // Enhanced response filtering
-    const botReply = data.choices[0].message.content;
+    const botReply = data.choices[0]?.message?.content;
+
     const responseCheck = checkContent(botReply);
-    
     if (!responseCheck.safe) {
-      return {
-        statusCode: 200,
-        body: JSON.stringify({
-          response: 'I apologise, but I cannot provide that information.',
-        }),
-      };
+      return { statusCode: 200, body: JSON.stringify({ response: "I apologise, but I cannot provide that information." }) };
     }
 
-    return {
-      statusCode: 200,
-      body: JSON.stringify({ response: botReply }),
-    };
+    return { statusCode: 200, body: JSON.stringify({ response: botReply }) };
   } catch (error) {
-    console.error('Error details:', error);
-    return {
-      statusCode: 500,
-      body: JSON.stringify({ error: 'Failed to process request' }),
-    };
+    console.error("Error processing chatbot response:", error);
+    return { statusCode: 500, body: JSON.stringify({ error: "Failed to process request" }) };
   }
-};
+}
 
 function isValidInput(message) {
-  return (
-    typeof message === 'string' &&
-    message.length >= 1 &&
-    message.length <= 1000 &&
-    /^[\x20-\x7E\s]*$/.test(message) // Only printable ASCII characters
-  );
+  return typeof message === "string" && message.length >= 1 && message.length <= 1000 && /^[\x20-\x7E\s]*$/.test(message);
 }
 
 function sanitizeUserMessage(msg) {
-  return msg
-    .replace(/[<>{}]/g, '') // Remove potential HTML/script tags
-    .replace(/['"]/g, '') // Remove quotes
-    .replace(/\\/g, '') // Remove backslashes
-    .trim();
+  return msg.replace(/[<>{}]/g, "").replace(/['"]/g, "").replace(/\\/g, "").trim();
 }
 
 function checkContent(msg) {
   const lower = msg.toLowerCase();
-  
-  // Check for prompt injections
-  const hasPromptInjection = DISALLOWED_PATTERNS.PROMPT_INJECTION.some(pattern => 
-    lower.includes(pattern)
-  );
-  if (hasPromptInjection) {
-    return { safe: false, reason: 'Potential prompt injection detected' };
-  }
-
-  // Check for harmful content
-  const hasHarmfulContent = DISALLOWED_PATTERNS.HARMFUL_CONTENT.some(pattern => 
-    lower.includes(pattern)
-  );
-  if (hasHarmfulContent) {
-    return { safe: false, reason: 'Harmful content detected' };
-  }
-
-  // Check for sensitive data requests
-  const hasSensitiveData = DISALLOWED_PATTERNS.SENSITIVE_DATA.some(pattern => 
-    lower.includes(pattern)
-  );
-  if (hasSensitiveData) {
-    return { safe: false, reason: 'Sensitive data request detected' };
-  }
+  if (DISALLOWED_PATTERNS.PROMPT_INJECTION.some((pattern) => lower.includes(pattern)))
+    return { safe: false, reason: "Potential prompt injection detected" };
+  if (DISALLOWED_PATTERNS.HARMFUL_CONTENT.some((pattern) => lower.includes(pattern)))
+    return { safe: false, reason: "Harmful content detected" };
+  if (DISALLOWED_PATTERNS.SENSITIVE_DATA.some((pattern) => lower.includes(pattern)))
+    return { safe: false, reason: "Sensitive data request detected" };
 
   return { safe: true };
 }
