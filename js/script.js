@@ -249,52 +249,59 @@ function displayBotMessage(botText) {
  * 6. MUSIC TOGGLE
  ****************************************/
 function fadeOut(audio, duration) {
-    return new Promise((resolve) => {
-        if (currentFadeInterval) {
+    // Clear any existing fade interval
+    if (currentFadeInterval) {
+        clearInterval(currentFadeInterval);
+    }
+    
+    const initialVolume = audio.volume;
+    const step = initialVolume / (duration / 50);
+    
+    currentFadeInterval = setInterval(() => {
+        if (audio.volume - step > 0) {
+            audio.volume -= step;
+        } else {
+            audio.volume = 0;
+            audio.pause();
             clearInterval(currentFadeInterval);
+            currentFadeInterval = null;
         }
-        
-        const initialVolume = audio.volume;
-        const step = initialVolume / (duration / 50);
-        
-        currentFadeInterval = setInterval(() => {
-            if (audio.volume - step > 0) {
-                audio.volume -= step;
-            } else {
-                audio.volume = 0;
-                clearInterval(currentFadeInterval);
-                currentFadeInterval = null;
-                resolve();
-            }
-        }, 50);
-    });
+    }, 50);
 }
 
 function fadeIn(audio, duration) {
-    return new Promise((resolve) => {
-        if (currentFadeInterval) {
+    // Clear any existing fade interval
+    if (currentFadeInterval) {
+        clearInterval(currentFadeInterval);
+    }
+    
+    const targetVolume = 0.2;
+    audio.volume = 0;
+    audio.play();
+    
+    const step = targetVolume / (duration / 50);
+    
+    currentFadeInterval = setInterval(() => {
+        if (audio.volume + step < targetVolume) {
+            audio.volume += step;
+        } else {
+            audio.volume = targetVolume;
             clearInterval(currentFadeInterval);
+            currentFadeInterval = null;
         }
-        
-        const targetVolume = 0.2;
-        audio.volume = 0;
-        
-        const step = targetVolume / (duration / 50);
-        
-        currentFadeInterval = setInterval(() => {
-            if (audio.volume + step < targetVolume) {
-                audio.volume += step;
-            } else {
-                audio.volume = targetVolume;
-                clearInterval(currentFadeInterval);
-                currentFadeInterval = null;
-                resolve();
-            }
-        }, 50);
-    });
+    }, 50);
+}
+
+function isMobile() {
+  return 'ontouchstart' in window || navigator.maxTouchPoints > 0;
 }
 
 function toggleMusic() {
+    // Check if mobile device - early return
+    if (isMobile()) {
+        return;
+    }
+    
     const musicToggle = document.getElementById('musicToggle');
     const bgMusic = document.getElementById('bgMusic');
     
@@ -305,58 +312,24 @@ function toggleMusic() {
     const toggleSound = document.getElementById(isMuted ? 'toggleOn' : 'toggleOff');
     if (toggleSound) {
         toggleSound.volume = 0.3;
-        // Use promise chain for iOS
-        const playPromise = toggleSound.play();
-        if (playPromise !== undefined) {
-            playPromise.catch(error => console.log("Sound play prevented:", error));
-        }
+        toggleSound.currentTime = 0;
+        toggleSound.play().catch(error => console.log("Sound play prevented:", error));
     }
     
     // Update toggle icon
     const toggleIcon = document.querySelector('.music-icon');
     toggleIcon.textContent = !isMuted ? '🔇' : '🔊';
     
-    // Handle music playback with promise
+    // Fade out or fade in the music
     if (!isMuted) {
-        const fadePromise = fadeOut(bgMusic, 1000);
-        fadePromise.then(() => bgMusic.pause());
+        fadeOut(bgMusic, 1000);
     } else {
-        bgMusic.play()
-            .then(() => fadeIn(bgMusic, 1000))
-            .catch(error => {
-                console.log("Music play prevented:", error);
-                // Revert state if play fails
-                musicToggle.classList.add('music-muted');
-                toggleIcon.textContent = '🔇';
-            });
+        fadeIn(bgMusic, 1000);
     }
     
+    // Save preference to localStorage
     localStorage.setItem('musicMuted', !isMuted);
 }
-
-// Check for saved music preference when page loads
-document.addEventListener('DOMContentLoaded', () => {
-  const savedMusicMuted = localStorage.getItem('musicMuted');
-  const musicToggle = document.getElementById('musicToggle');
-  const bgMusic = document.getElementById('bgMusic');
-  
-  // Set initial volume but don't play yet
-  bgMusic.volume = 0.2;
-  
-  // Set initial state without playing
-  if (savedMusicMuted === 'true') {
-    musicToggle.classList.add('music-muted');
-    document.querySelector('.music-icon').textContent = '🔇';
-  } else {
-    document.querySelector('.music-icon').textContent = '🔊';
-  }
-  
-  // Add touch event listener specifically for iOS
-  musicToggle.addEventListener('touchend', function(e) {
-    e.preventDefault(); // Prevent double-firing on iOS
-    toggleMusic();
-  });
-});
 
 // Welcome Modal Handler
 document.addEventListener("DOMContentLoaded", () => {
@@ -418,4 +391,38 @@ function initMobileMenu() {
 document.addEventListener("DOMContentLoaded", () => {
   initMobileMenu();
   // ... your other existing code
+});
+
+document.addEventListener('DOMContentLoaded', () => {
+  const musicToggle = document.getElementById('musicToggle');
+  const bgMusic = document.getElementById('bgMusic');
+  
+  // Check if device is mobile
+  const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+  
+  if (isMobile) {
+    // Hide music toggle on mobile
+    musicToggle.style.display = 'none';
+    // Disable audio elements
+    bgMusic.remove();
+    document.getElementById('toggleOn').remove();
+    document.getElementById('toggleOff').remove();
+  } else {
+    // Desktop behaviour
+    const savedMusicMuted = localStorage.getItem('musicMuted');
+    
+    // Set initial volume but don't play yet
+    bgMusic.volume = 0.2;
+    
+    // Set initial state
+    if (savedMusicMuted === 'true') {
+      musicToggle.classList.add('music-muted');
+      document.querySelector('.music-icon').textContent = '🔇';
+    } else {
+      document.querySelector('.music-icon').textContent = '🔊';
+    }
+    
+    // Add click event listener
+    musicToggle.addEventListener('click', toggleMusic);
+  }
 });
