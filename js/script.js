@@ -371,3 +371,39 @@ document.addEventListener("DOMContentLoaded", () => {
     }, 300);
   });
 });
+
+function initMobileMenu() {
+  const hamburger = document.getElementById('hamburgerBtn');
+  const navMenu = document.querySelector('.nav-menu');
+  const menuLinks = document.querySelectorAll('.nav-menu a');
+
+  function toggleMenu() {
+    hamburger.classList.toggle('active');
+    navMenu.classList.toggle('active');
+  }
+
+  // Toggle menu on hamburger click
+  hamburger.addEventListener('click', toggleMenu);
+
+  // Close menu when clicking a link
+  menuLinks.forEach(link => {
+    link.addEventListener('click', () => {
+      hamburger.classList.remove('active');
+      navMenu.classList.remove('active');
+    });
+  });
+
+  // Close menu when clicking outside
+  document.addEventListener('click', (e) => {
+    if (!hamburger.contains(e.target) && 
+        !navMenu.contains(e.target) && 
+        navMenu.classList.contains('active')) {
+      toggleMenu();
+    }
+  });
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+  initMobileMenu();
+  // ... your other existing code
+});

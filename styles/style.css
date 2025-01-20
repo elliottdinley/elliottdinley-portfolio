@@ -192,15 +192,6 @@ button,
   color: var(--text-color);
   opacity: 0.7;
   transition: opacity 0.5s ease;
-  justify-self: end;
-}
-
-.dark-mode-toggle:hover {
-  opacity: 1;
-}
-
-.toggle-icon {
-  display: inline-block;
 }
 
 .toggle-container {
@@ -208,6 +199,11 @@ button,
   flex-direction: row-reverse;
   gap: 1rem;
   justify-self: end;
+  align-items: center;
+}
+
+.toggle-icon {
+  display: inline-block;
 }
 
 .music-toggle {
@@ -516,6 +512,18 @@ button,
 
   .marker {
     left: -9px;
+  }
+
+  .nav-header {
+    grid-template-columns: auto 1fr auto;
+  }
+
+  .toggle-container {
+    order: 2;
+  }
+
+  .hamburger {
+    order: 3;
   }
 }
 
@@ -842,4 +850,78 @@ button,
 * {
   scrollbar-width: thin;
   scrollbar-color: var(--text-color) transparent;
+}
+
+/* Hamburger Menu Styles */
+.hamburger {
+  display: none;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0.5rem;
+  z-index: 1000;
+}
+
+.hamburger-line {
+  display: block;
+  width: 25px;
+  height: 3px;
+  margin: 5px 0;
+  background-color: var(--text-color);
+  transition: transform 0.3s ease, opacity 0.3s ease;
+}
+
+/* Mobile Navigation Styles */
+@media (max-width: 768px) {
+  .hamburger {
+    display: block;
+  }
+
+  .nav-menu {
+    position: fixed;
+    top: 0;
+    right: -100%;
+    width: 70%;
+    height: 100vh;
+    background-color: var(--card-bg);
+    padding: 6rem 2rem;
+    transition: right 0.3s ease;
+    box-shadow: -5px 0 15px rgba(0, 0, 0, 0.1);
+  }
+
+  .nav-menu.active {
+    right: 0;
+  }
+
+  .nav-menu ul {
+    flex-direction: column;
+    gap: 2rem;
+  }
+
+  /* Hamburger Animation */
+  .hamburger.active .hamburger-line:nth-child(1) {
+    transform: translateY(8px) rotate(45deg);
+  }
+
+  .hamburger.active .hamburger-line:nth-child(2) {
+    opacity: 0;
+  }
+
+  .hamburger.active .hamburger-line:nth-child(3) {
+    transform: translateY(-8px) rotate(-45deg);
+  }
+
+  /* Adjust header layout */
+  .nav-header {
+    grid-template-columns: auto 1fr auto;
+    padding: 1rem;
+  }
+
+  .toggle-container {
+    order: 2;
+  }
+
+  .hamburger {
+    order: 3;
+  }
 }
