@@ -182,8 +182,6 @@ async function handler(event) {
     return createErrorResponse(403, `Content filtered: ${contentCheckResult.reason}`);
   }
 
-  const sanitizedMessage = sanitizeUserMessage(message);
-
   try {
     const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
       method: "POST",
@@ -294,22 +292,7 @@ async function handler(event) {
 function isValidInput(message) {
   return typeof message === "string" && 
          message.length >= 1 && 
-         message.length <= 1000 && 
-         // Updated regex to include common Unicode punctuation and symbols
-         /^[a-zA-Z0-9\s.,!?''"""\-–—]+$/.test(message);
-}
-
-function sanitizeUserMessage(msg) {
-  // First normalize common Unicode variations
-  const normalizedMsg = msg
-    .replace(/['']/g, "'")    // Normalize apostrophes
-    .replace(/[""]/g, '"')    // Normalize quotation marks
-    .replace(/[–—]/g, '-');   // Normalize dashes
-
-  // Then remove potentially dangerous characters
-  return normalizedMsg
-    .replace(/[<>{}\\]/g, "")
-    .trim();
+         message.length <= 1000;
 }
 
 function checkContent(msg) {
