@@ -292,16 +292,24 @@ async function handler(event) {
 }
 
 function isValidInput(message) {
-  // Allow common punctuation while still blocking potentially harmful characters
   return typeof message === "string" && 
          message.length >= 1 && 
          message.length <= 1000 && 
-         /^[a-zA-Z0-9\s.,!?'"-]+$/.test(message);
+         // Updated regex to include common Unicode punctuation and symbols
+         /^[a-zA-Z0-9\s.,!?''"""\-–—]+$/.test(message);
 }
 
 function sanitizeUserMessage(msg) {
-  // Only sanitize potentially dangerous characters, preserve normal punctuation
-  return msg.replace(/[<>{}\\]/g, "").trim();
+  // First normalize common Unicode variations
+  const normalizedMsg = msg
+    .replace(/['']/g, "'")    // Normalize apostrophes
+    .replace(/[""]/g, '"')    // Normalize quotation marks
+    .replace(/[–—]/g, '-');   // Normalize dashes
+
+  // Then remove potentially dangerous characters
+  return normalizedMsg
+    .replace(/[<>{}\\]/g, "")
+    .trim();
 }
 
 function checkContent(msg) {
