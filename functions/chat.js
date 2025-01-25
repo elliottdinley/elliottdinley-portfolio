@@ -266,7 +266,7 @@ async function handler(event) {
           },
           {
             role: 'user',
-            content: sanitizedMessage,
+            content: message,
           },
         ],
         temperature: 0.7,
