@@ -214,14 +214,17 @@ if (chatForm && chatMessages && userInput) {
         // If we got a valid response from the bot
         if (data && data.response) {
           displayBotMessage(data.response);
+        } else if (data && data.error) {
+          // Display the specific error message from the API
+          displayBotMessage(`I apologise, but I encountered an issue: ${data.error}`);
         } else {
-          displayBotMessage("Oops, something went wrong. Please try again.");
+          displayBotMessage("I apologise, but I encountered an unexpected error. Please try again in a moment.");
         }
       } catch (error) {
         // Hide loader
         loader.style.display = 'none';
         console.error("Error:", error);
-        displayBotMessage("Error connecting to chatbot. Please try again.");
+        displayBotMessage("I apologise, but I'm having trouble connecting at the moment. Please check your internet connection and try again.");
       }
     });
   });
