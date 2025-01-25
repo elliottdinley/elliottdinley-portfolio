@@ -1,4 +1,15 @@
 /****************************************
+ * Console Message for Curious Developers
+ ****************************************/
+document.addEventListener("DOMContentLoaded", () => {
+  console.log("%c👋 Hello there, curious developer!", "color: #3498db; font-size: 18px; font-weight: bold;");
+  console.log("%cThanks for exploring my portfolio! Let's connect:", "color: #2ecc71; font-size: 14px;");
+  console.log("%c📧 Email: elliott.dinley1@gmail.com", "color: #e74c3c; font-size: 14px;");
+  console.log("%c💼 LinkedIn: https://www.linkedin.com/in/elliottdinley", "color: #9b59b6; font-size: 14px;");
+  console.log("%c🔗 GitHub: https://github.com/elliottdinley", "color: #f1c40f; font-size: 14px;");
+});
+
+/****************************************
  * 1. TYPEWRITER EFFECT
  ****************************************/
 const typedTextSpan = document.getElementById("typewriter");
@@ -181,29 +192,38 @@ if (chatForm && chatMessages && userInput) {
     const loader = document.querySelector('.loader');
     loader.style.display = 'grid';
 
-    try {
-      const response = await fetch("/.netlify/functions/chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message })
-      });
-      const data = await response.json();
+    grecaptcha.enterprise.ready(async () => {
+      try {
+        const recaptchaToken = await grecaptcha.enterprise.execute("6Lcg0bwqAAAAAI8qkk0r9A9A2KnoK6n9v9n8WI7v", {
+          action: "chatbot"
+        });
+        
+        const response = await fetch("/.netlify/functions/chat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            message,
+            recaptchaToken
+          })
+        });
+        const data = await response.json();
 
-      // Hide loader
-      loader.style.display = 'none';
-
-      // If we got a valid response from the bot
-      if (data && data.response) {
-        displayBotMessage(data.response);
-      } else {
-        displayBotMessage("Oops, something went wrong. Please try again.");
+        // Hide loader
+        loader.style.display = 'none';
+  
+        // If we got a valid response from the bot
+        if (data && data.response) {
+          displayBotMessage(data.response);
+        } else {
+          displayBotMessage("Oops, something went wrong. Please try again.");
+        }
+      } catch (error) {
+        // Hide loader
+        loader.style.display = 'none';
+        console.error("Error:", error);
+        displayBotMessage("Error connecting to chatbot. Please try again.");
       }
-    } catch (error) {
-      // Hide loader
-      loader.style.display = 'none';
-      console.error("Error:", error);
-      displayBotMessage("Error connecting to chatbot. Please try again.");
-    }
+    });
   });
 }
 

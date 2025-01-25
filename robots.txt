@@ -1,0 +1,34 @@
+# robots.txt for elliottdinley.dev
+# Hello, crawlers (and any humans curious enough to read this)!
+
+# Standard procedure, wouldn't be a proper robots.txt without it, eh?
+User-agent: *
+Allow: /
+
+Sitemap: https://elliottdinley.dev/sitemap.xml
+
+# A little something extra...
+# To all bots: Don't work too hard. Take a break, maybe visit the homepage? :)
+
+# Specific bot directives
+User-agent: Googlebot
+Disallow: /work-in-progress/
+# Thanks for stopping by, Google. You're doing great!
+
+User-agent: Bingbot
+Disallow: /hidden-treasure/
+# If you find it, let us know, okay?
+
+User-agent: *
+Disallow: /404/
+
+# Fun disallowed paths (not real, but fun to think about)
+Disallow: /secret-library/
+Disallow: /time-machine/
+Disallow: /debugging-station/
+
+# To any curious human:
+# This file helps search engines navigate the site.
+# Feel free to browse, but sorry, the time machine is out of order.
+
+# End of file. Safe travels through the web!

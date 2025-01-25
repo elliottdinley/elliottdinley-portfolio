@@ -1,74 +1,146 @@
-const fetch = require('node-fetch');
+const fetch = require("node-fetch");
+const { RecaptchaEnterpriseServiceClient } = require("@google-cloud/recaptcha-enterprise");
 
-const SYSTEM_DELIMITER = '#################################################';
+const SYSTEM_DELIMITER = "#################################################";
 
-// Improved content filtering with more sophisticated patterns
+// For in-memory rate limiting
+const allowedIPs = {};
+
+// For content filtering
 const DISALLOWED_PATTERNS = {
   PROMPT_INJECTION: [
-    'system prompt',
-    'ignore previous',
-    'ignore above',
-    'instructions',
-    'bypass',
-    'override',
-    'forget',
-    SYSTEM_DELIMITER
+    "system prompt",
+    "ignore previous",
+    "ignore above",
+    "instructions",
+    "bypass",
+    "override",
+    "forget",
+    SYSTEM_DELIMITER,
   ],
-  HARMFUL_CONTENT: [
-    'hack',
-    'exploit',
-    'steal',
-    'illegal',
-    'malicious'
-  ],
-  SENSITIVE_DATA: [
-    'password',
-    'api key',
-    'token',
-    'secret',
-    'credentials'
-  ]
+  HARMFUL_CONTENT: ["hack", "exploit", "steal", "illegal", "malicious"],
+  SENSITIVE_DATA: ["password", "api key", "token", "secret", "credentials"],
 };
 
-const handler = async (event) => {
-  if (event.httpMethod !== 'POST') {
-    return { statusCode: 405, body: 'Method Not Allowed' };
+// Parse Google Cloud credentials from environment
+const googleCredentials = JSON.parse(process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON);
+
+// Instantiate the reCAPTCHA Enterprise client
+const client = new RecaptchaEnterpriseServiceClient({
+  credentials: {
+    client_email: googleCredentials.client_email,
+    private_key: googleCredentials.private_key,
+  },
+  projectId: googleCredentials.project_id,
+});
+
+// Create a reCAPTCHA Enterprise assessment
+async function createRecaptchaAssessment({ recaptchaKey, token, recaptchaAction }) {
+  const projectPath = client.projectPath(googleCredentials.project_id);
+
+  const request = {
+    assessment: {
+      event: {
+        token,
+        siteKey: recaptchaKey,
+      },
+    },
+    parent: projectPath,
+  };
+
+  try {
+    const [response] = await client.createAssessment(request);
+
+    if (!response.tokenProperties.valid) {
+      console.error(`Invalid reCAPTCHA token: ${response.tokenProperties.invalidReason}`);
+      return null;
+    }
+
+    if (response.tokenProperties.action !== recaptchaAction) {
+      console.error("Mismatch in reCAPTCHA action.");
+      return null;
+    }
+
+    console.log(`reCAPTCHA score: ${response.riskAnalysis.score}`);
+    response.riskAnalysis.reasons.forEach((reason) => console.log(`Reason: ${reason}`));
+
+    return response.riskAnalysis.score;
+  } catch (error) {
+    console.error("Error creating reCAPTCHA assessment:", error);
+    throw error;
+  }
+}
+
+async function handler(event) {
+  if (event.httpMethod !== "POST") {
+    return { statusCode: 405, body: "Method Not Allowed" };
+  }
+
+  const ip = event.headers["x-forwarded-for"] || event.requestContext?.identity?.sourceIp;
+  if (!allowedIPs[ip]) allowedIPs[ip] = { count: 0, lastTime: Date.now() };
+
+  const now = Date.now();
+  if (now - allowedIPs[ip].lastTime > 60_000) {
+    allowedIPs[ip].count = 0;
+    allowedIPs[ip].lastTime = now;
+  }
+
+  allowedIPs[ip].count++;
+  if (allowedIPs[ip].count > 5) {
+    return { statusCode: 429, body: JSON.stringify({ error: "Too many requests. Please try again later." }) };
+  }
+
+  let body;
+  try {
+    body = JSON.parse(event.body);
+  } catch {
+    return { statusCode: 400, body: JSON.stringify({ error: "Invalid JSON in request body" }) };
+  }
+
+  const { message, recaptchaToken } = body;
+  if (!message || !recaptchaToken) {
+    return { statusCode: 400, body: JSON.stringify({ error: "Missing 'message' or 'recaptchaToken'" }) };
   }
 
   try {
-    const { message } = JSON.parse(event.body);
+    const score = await createRecaptchaAssessment({
+      recaptchaKey: "6Lcg0bwqAAAAAI8qkk0r9A9A2KnoK6n9v9n8WI7v",
+      token: recaptchaToken,
+      recaptchaAction: "chatbot",
+    });
 
-    // Enhanced input validation
-    if (!isValidInput(message)) {
-      return {
-        statusCode: 400,
-        body: JSON.stringify({ error: 'Invalid input format or length' })
-      };
+    if (!score) {
+      return { statusCode: 401, body: JSON.stringify({ error: "Invalid reCAPTCHA token" }) };
     }
 
-    // Advanced content filtering
-    const contentCheckResult = checkContent(message);
-    if (!contentCheckResult.safe) {
-      return {
-        statusCode: 403,
-        body: JSON.stringify({ error: `Content filtered: ${contentCheckResult.reason}` })
-      };
+    if (score < 0.3) {
+      return { statusCode: 403, body: JSON.stringify({ error: "reCAPTCHA score too low - suspected bot/spam" }) };
     }
+  } catch (err) {
+    console.error("reCAPTCHA verification failed:", err);
+    return { statusCode: 500, body: JSON.stringify({ error: "Failed to verify reCAPTCHA" }) };
+  }
 
-    const sanitizedMessage = sanitizeUserMessage(message);
-    
-    // Role-based prompting with instruction separation and delimiters
-    const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${process.env.GROQ_API_KEY}`,
-      },
+  if (!isValidInput(message)) {
+    return { statusCode: 400, body: JSON.stringify({ error: "Invalid input format or length" }) };
+  }
+
+  const contentCheckResult = checkContent(message);
+  if (!contentCheckResult.safe) {
+    return { statusCode: 403, body: JSON.stringify({ error: `Content filtered: ${contentCheckResult.reason}` }) };
+  }
+
+  const sanitizedMessage = sanitizeUserMessage(message);
+
+  try {
+    const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${process.env.GROQ_API_KEY}` },
       body: JSON.stringify({
-        model: 'llama-3.3-70b-versatile',
+        model: "llama-3.3-70b-versatile",
         messages: [
           {
-            role: 'system',
+            role: "system",
             content: `You are a chatbot designed to emulate Elliott Dinley, a motivated and skilled Associate Java Developer at Send Technology Solutions Limited, a leading UK-based insurtech company. Your purpose is to assist users with queries related to Elliott's professional expertise, work experience, and career journey. Here's everything you need to know about him:
 
             Professional Role and Skills:
@@ -153,76 +225,36 @@ const handler = async (event) => {
     });
 
     const data = await response.json();
-    
-    // Enhanced response filtering
-    const botReply = data.choices[0].message.content;
+    const botReply = data.choices[0]?.message?.content;
+
     const responseCheck = checkContent(botReply);
-    
     if (!responseCheck.safe) {
-      return {
-        statusCode: 200,
-        body: JSON.stringify({
-          response: 'I apologise, but I cannot provide that information.',
-        }),
-      };
+      return { statusCode: 200, body: JSON.stringify({ response: "I apologise, but I cannot provide that information." }) };
     }
 
-    return {
-      statusCode: 200,
-      body: JSON.stringify({ response: botReply }),
-    };
+    return { statusCode: 200, body: JSON.stringify({ response: botReply }) };
   } catch (error) {
-    console.error('Error details:', error);
-    return {
-      statusCode: 500,
-      body: JSON.stringify({ error: 'Failed to process request' }),
-    };
+    console.error("Error processing chatbot response:", error);
+    return { statusCode: 500, body: JSON.stringify({ error: "Failed to process request" }) };
   }
-};
+}
 
 function isValidInput(message) {
-  return (
-    typeof message === 'string' &&
-    message.length >= 1 &&
-    message.length <= 1000 &&
-    /^[\x20-\x7E\s]*$/.test(message) // Only printable ASCII characters
-  );
+  return typeof message === "string" && message.length >= 1 && message.length <= 1000 && /^[\x20-\x7E\s]*$/.test(message);
 }
 
 function sanitizeUserMessage(msg) {
-  return msg
-    .replace(/[<>{}]/g, '') // Remove potential HTML/script tags
-    .replace(/['"]/g, '') // Remove quotes
-    .replace(/\\/g, '') // Remove backslashes
-    .trim();
+  return msg.replace(/[<>{}]/g, "").replace(/['"]/g, "").replace(/\\/g, "").trim();
 }
 
 function checkContent(msg) {
   const lower = msg.toLowerCase();
-  
-  // Check for prompt injections
-  const hasPromptInjection = DISALLOWED_PATTERNS.PROMPT_INJECTION.some(pattern => 
-    lower.includes(pattern)
-  );
-  if (hasPromptInjection) {
-    return { safe: false, reason: 'Potential prompt injection detected' };
-  }
-
-  // Check for harmful content
-  const hasHarmfulContent = DISALLOWED_PATTERNS.HARMFUL_CONTENT.some(pattern => 
-    lower.includes(pattern)
-  );
-  if (hasHarmfulContent) {
-    return { safe: false, reason: 'Harmful content detected' };
-  }
-
-  // Check for sensitive data requests
-  const hasSensitiveData = DISALLOWED_PATTERNS.SENSITIVE_DATA.some(pattern => 
-    lower.includes(pattern)
-  );
-  if (hasSensitiveData) {
-    return { safe: false, reason: 'Sensitive data request detected' };
-  }
+  if (DISALLOWED_PATTERNS.PROMPT_INJECTION.some((pattern) => lower.includes(pattern)))
+    return { safe: false, reason: "Potential prompt injection detected" };
+  if (DISALLOWED_PATTERNS.HARMFUL_CONTENT.some((pattern) => lower.includes(pattern)))
+    return { safe: false, reason: "Harmful content detected" };
+  if (DISALLOWED_PATTERNS.SENSITIVE_DATA.some((pattern) => lower.includes(pattern)))
+    return { safe: false, reason: "Sensitive data request detected" };
 
   return { safe: true };
 }

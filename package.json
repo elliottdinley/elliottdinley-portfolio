@@ -4,6 +4,7 @@
     "description": "Personal portfolio website",
     "dependencies": {
         "node-fetch": "^2.6.9",
-        "marked": "^15.0.6"
+        "marked": "^15.0.6",
+        "@google-cloud/recaptcha-enterprise": "^5.13.0"
     }
 }
