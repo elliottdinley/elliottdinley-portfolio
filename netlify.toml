@@ -17,5 +17,11 @@
 
 # Rate limiting using Netlify Edge Functions
 [[edge_functions]]
+  path = "/.netlify/functions/chat"
   function = "rate-limit"
-  path = "/api/*"
+
+[[redirects]]
+  from = "/.netlify/functions/chat"
+  to = "/.netlify/functions/chat"
+  status = 200
+  edge_function = "rate-limit"
