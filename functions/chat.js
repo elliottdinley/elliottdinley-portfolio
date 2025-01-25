@@ -292,11 +292,16 @@ async function handler(event) {
 }
 
 function isValidInput(message) {
-  return typeof message === "string" && message.length >= 1 && message.length <= 1000 && /^[\x20-\x7E\s]*$/.test(message);
+  // Allow common punctuation while still blocking potentially harmful characters
+  return typeof message === "string" && 
+         message.length >= 1 && 
+         message.length <= 1000 && 
+         /^[a-zA-Z0-9\s.,!?'"-]+$/.test(message);
 }
 
 function sanitizeUserMessage(msg) {
-  return msg.replace(/[<>{}]/g, "").replace(/['"]/g, "").replace(/\\/g, "").trim();
+  // Only sanitize potentially dangerous characters, preserve normal punctuation
+  return msg.replace(/[<>{}\\]/g, "").trim();
 }
 
 function checkContent(msg) {
