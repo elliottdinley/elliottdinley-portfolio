@@ -214,9 +214,11 @@ if (chatForm && chatMessages && userInput) {
         // If we got a valid response from the bot
         if (data && data.response) {
           displayBotMessage(data.response);
-        } else if (data && data.error) {
+        } else if (data && data.body && data.body.message) {
           // Display the specific error message from the API
-          displayBotMessage(`I apologise, but I encountered an issue: ${data.error}`);
+          displayBotMessage(`${data.body.message} (Error Code: ${data.statusCode})`);
+        } else if (data && data.body && data.body.error) {
+          displayBotMessage(`I apologise, but I encountered an issue: ${data.body.error}`);
         } else {
           displayBotMessage("I apologise, but I encountered an unexpected error. Please try again in a moment.");
         }

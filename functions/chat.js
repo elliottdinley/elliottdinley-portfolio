@@ -34,6 +34,48 @@ const client = new RecaptchaEnterpriseServiceClient({
   projectId: googleCredentials.project_id,
 });
 
+const ERROR_MESSAGES = {
+  400: [
+    "That request doesn't seem quite right. Please check and try again.",
+    "There's something off with that request. Have another go.",
+    "I couldn't process the request. Perhaps double-check it?"
+  ],
+  401: [
+    "Authorisation required. Please provide valid credentials.",
+    "Access denied. Authentication failed.",
+    "Your credentials are invalid. Please check and try again."
+  ],
+  403: [
+    "Access is not permitted. You don't have the necessary permissions.",
+    "You're not allowed to access this resource.",
+    "Permission denied. This action is restricted."
+  ],
+  405: [
+    "This method isn't supported for the requested resource.",
+    "The method used is not allowed. Please check your request.",
+    "Method not supported. Try a different approach."
+  ],
+  429: [
+    "You've made too many requests in a short time. Please slow down.",
+    "Request limit exceeded. Try again later.",
+    "Too many requests. Please wait before trying again."
+  ],
+  500: [
+    "Something went wrong on my end. Please try again later.",
+    "There's been an error on my server. I'm working on it.",
+    "An internal error occurred. Please try again in a moment."
+  ]
+};
+
+function getRandomErrorMessage(statusCode) {
+  const messages = ERROR_MESSAGES[statusCode] || [
+    "Something unexpected happened. Please try again later.",
+    "I'm not quite sure what went wrong, but I'm looking into it.",
+    "An unknown error occurred. Let's give it another go."
+  ];
+  return messages[Math.floor(Math.random() * messages.length)];
+}
+
 // Create a reCAPTCHA Enterprise assessment
 async function createRecaptchaAssessment({ recaptchaKey, token, recaptchaAction }) {
   const projectPath = client.projectPath(googleCredentials.project_id);
@@ -71,9 +113,19 @@ async function createRecaptchaAssessment({ recaptchaKey, token, recaptchaAction 
   }
 }
 
+function createErrorResponse(statusCode, specificError) {
+  return {
+    statusCode,
+    body: JSON.stringify({
+      error: specificError,
+      message: getRandomErrorMessage(statusCode)
+    })
+  };
+}
+
 async function handler(event) {
   if (event.httpMethod !== "POST") {
-    return { statusCode: 405, body: "Method Not Allowed" };
+    return createErrorResponse(405, "Method Not Allowed");
   }
 
   const ip = event.headers["x-forwarded-for"] || event.requestContext?.identity?.sourceIp;
@@ -87,19 +139,19 @@ async function handler(event) {
 
   allowedIPs[ip].count++;
   if (allowedIPs[ip].count > 5) {
-    return { statusCode: 429, body: JSON.stringify({ error: "Too many requests. Please try again later." }) };
+    return createErrorResponse(429, "Too many requests. Please try again later.");
   }
 
   let body;
   try {
     body = JSON.parse(event.body);
   } catch {
-    return { statusCode: 400, body: JSON.stringify({ error: "Invalid JSON in request body" }) };
+    return createErrorResponse(400, "Invalid JSON in request body");
   }
 
   const { message, recaptchaToken } = body;
   if (!message || !recaptchaToken) {
-    return { statusCode: 400, body: JSON.stringify({ error: "Missing 'message' or 'recaptchaToken'" }) };
+    return createErrorResponse(400, "Missing 'message' or 'recaptchaToken'");
   }
 
   try {
@@ -110,24 +162,24 @@ async function handler(event) {
     });
 
     if (!score) {
-      return { statusCode: 401, body: JSON.stringify({ error: "Invalid reCAPTCHA token" }) };
+      return createErrorResponse(401, "Invalid reCAPTCHA token");
     }
 
     if (score < 0.3) {
-      return { statusCode: 403, body: JSON.stringify({ error: "reCAPTCHA score too low - suspected bot/spam" }) };
+      return createErrorResponse(403, "reCAPTCHA score too low - suspected bot/spam");
     }
   } catch (err) {
     console.error("reCAPTCHA verification failed:", err);
-    return { statusCode: 500, body: JSON.stringify({ error: "Failed to verify reCAPTCHA" }) };
+    return createErrorResponse(500, "Failed to verify reCAPTCHA");
   }
 
   if (!isValidInput(message)) {
-    return { statusCode: 400, body: JSON.stringify({ error: "Invalid input format or length" }) };
+    return createErrorResponse(400, "Invalid input format or length");
   }
 
   const contentCheckResult = checkContent(message);
   if (!contentCheckResult.safe) {
-    return { statusCode: 403, body: JSON.stringify({ error: `Content filtered: ${contentCheckResult.reason}` }) };
+    return createErrorResponse(403, `Content filtered: ${contentCheckResult.reason}`);
   }
 
   const sanitizedMessage = sanitizeUserMessage(message);
@@ -235,7 +287,7 @@ async function handler(event) {
     return { statusCode: 200, body: JSON.stringify({ response: botReply }) };
   } catch (error) {
     console.error("Error processing chatbot response:", error);
-    return { statusCode: 500, body: JSON.stringify({ error: "Failed to process request" }) };
+    return createErrorResponse(500, "Failed to process request");
   }
 }
 
