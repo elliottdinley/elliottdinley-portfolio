@@ -972,3 +972,19 @@ button,
   color: var(--text-color);
   opacity: 0.8;
 }
+
+.learn-more-btn {
+  background: none;
+  border: none;
+  color: var(--accent-color);
+  font-size: 0.9rem;
+  text-decoration: underline;
+  cursor: pointer;
+  padding: 0 0.5rem;
+  margin-left: 0.5rem;
+  transition: opacity 0.3s ease;
+}
+
+.learn-more-btn:hover {
+  opacity: 0.8;
+}

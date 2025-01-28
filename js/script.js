@@ -458,3 +458,17 @@ document.addEventListener('DOMContentLoaded', () => {
     musicToggle.addEventListener('click', toggleMusic);
   }
 });
+
+document.addEventListener("DOMContentLoaded", () => {
+  const chatbotModal = document.getElementById("chatbotModal");
+  const learnMoreBtn = document.getElementById("chatbotLearnMore");
+  const modalCloseBtn = chatbotModal.querySelector(".modal-button");
+
+  learnMoreBtn.addEventListener("click", () => {
+    chatbotModal.classList.add("show");
+  });
+
+  modalCloseBtn.addEventListener("click", () => {
+    chatbotModal.classList.remove("show");
+  });
+});
